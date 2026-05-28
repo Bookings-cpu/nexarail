@@ -26,7 +26,7 @@ Complete this form to apply as a validator on the NexaRail controlled testnet.
 | Field | Your Response |
 |---|---|
 | Validator Moniker | NODESYNC |
-| Intended Commission Rate | 10% (0.1) |
+| Intended Commission Rate | 5% (0.05) |
 | Intended Max Commission Rate | 20% (0.20) |
 | Intended Max Change Rate | 5% (0.05) |
 | Self-Delegation Amount | 500,000,000 unxrl |
