@@ -56,7 +56,7 @@ Complete this form to apply as a validator on the NexaRail controlled testnet.
 | Chains Previously Validated | I have running nodes & validators on mainnet & testnet for: 0gAI, Tellor, Joynetwork, Republic, Pchain, Drosera, Entangle, Side, Dill, Galactica, Chainbase, Story, Tanssi, Dymention, Avail, dwall, Airchains, Warden, Empeiria, AlignedLayer... |
 | Cosmos SDK Experience? | Yes |
 | Tendermint/CometBFT Experience? | Yes |
-| Key Management Practice | TMKMS & backup offline |
+| Key Management Practice | Offline mnemonic backup, encrypted key storage, firewall protection and restricted SSH access |
 | Incident Response Experience | 24/7 monitoring, state sync recovery, node migration, chain upgrades, validator maintenance and peer troubleshooting. |
 
 ## Commitments
