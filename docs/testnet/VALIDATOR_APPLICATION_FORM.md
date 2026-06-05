@@ -81,7 +81,8 @@ Please confirm each statement with your initials or a check:
 After acceptance, you will be instructed to generate and submit:
 
 - Node ID: 41f18df3a0c999ccf32510bea22096e2dff8596a
-- Account Address: nxr1pk3f8veavsga70889g25xafa6z5zrjjekf3jgm 
+- Account Address: nxr1pk3f8veavsga70889g25xafa6z5zrjjekf3jgm
+- Validator Address: nxrvaloper1pk3f8veavsga70889g25xafa6z5zrjjer3h3x0
 - Validator public key: {"@type":"/cosmos.crypto.ed25519.PubKey","key":"Cwo346rDoI2e5zcDNDdCflzmagXzOwBP7t37PHu+ba0="}
 - Signed `gentx` file
 
