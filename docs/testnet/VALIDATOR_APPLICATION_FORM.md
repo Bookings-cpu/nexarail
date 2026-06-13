@@ -19,7 +19,7 @@ Complete this form to apply as a validator on the NexaRail controlled testnet.
 | Discord Handle | yahya6935 |
 | Telegram Handle | @Edsny|
 | GitHub Handle | Edsny1 |
-| Website (optional) | https://oshvank.xyz |
+| Website (optional) | https://oshvank.xyz, https://monitor.oshvank.xyz, https://explorer-gnoland.oshvank.xyz, https://explorer.oshvank.xyz, https://monad.oshvank.xyz, https://celestiascope.oshvank.xyz, https://monadscope.oshvank.xyz |
 
 ## Validator Information
 
