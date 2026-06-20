@@ -82,3 +82,29 @@ rehearsals/validator-agents/product-flows/gov-toggles/
 # GitHub Release asset binaries (uploaded via Releases UI, not committed to git)
 releases/github/v0.1.0-rc1/nexaraild-*
 releases/github/v0.1.0-rc1-hotfix-cli/nexaraild-*
+
+# Mainnet key material (operator/consensus/node keys, mnemonics)
+coordination/mainnet-keys/
+
+# Local-only runtime artefacts — do not commit
+build/
+$OUT/
+coordination/operations/
+coordination/sentry-deployment-hubmac3-2026-06-17/
+
+# Sensitive operator subdirs — keep public outreach + docs only.
+# (Reviewed 2026-06-20: treasury/faucet/incidents/monitoring/validators
+# trackers contain wallet addresses, send commands, historical incident
+# detail and internal trackers that should not be in the public repo.)
+coordination/treasury/
+coordination/faucet/
+coordination/incidents/
+coordination/monitoring/
+coordination/mainnet-resubmissions/
+
+# Outreach + validator subdirs — selectively commit only what's intended
+# for public consumption. Default to ignored; explicit `git add` is the gate.
+# (The public-safe copy pack + discord templates that are already in HEAD
+# stay tracked — only new files in these dirs are gated.)
+coordination/outreach/
+coordination/validators/
