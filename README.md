@@ -1,11 +1,38 @@
 # NexaRail Network
 
 [![CI](https://github.com/Bookings-cpu/nexarail/actions/workflows/nexarail-regression.yml/badge.svg)](https://github.com/Bookings-cpu/nexarail/actions/workflows/nexarail-regression.yml)
-A sovereign Layer 1 blockchain for controlled testnet evaluation of railway settlement and payments — built with Cosmos SDK v0.47.17 and CometBFT v0.37.18. External validator distribution is in controlled testnet preparation and is not yet live.
 
-**Status: RC1 CLI hotfix source tag (`v0.1.0-rc1-cli-hotfix`) — controlled external-validator testnet preparation. NOT launched. NO mainnet. No token sale. Testnet tokens have zero monetary value. SDK packages are NOT published to npm or PyPI.**
+A sovereign Layer 1 blockchain for railway settlement and payments — built with Cosmos SDK v0.47.17 and CometBFT v0.37.18.
 
-See [Reviewer Handoff](docs/release/REVIEWER_HANDOFF.md) | [Litepaper](docs/NEXARAIL_LITEPAPER.md) | [Developer Portal](docs/portal/index.html) | [Quickstart](docs/release/RC1_QUICKSTART.md) | [Release Verification](docs/release/GITHUB_RELEASE_V0.1.0_RC1_VERIFICATION.md)
+## Mainnet — `nexarail-mainnet-1` — LIVE
+
+NexaRail mainnet launched on **2026-06-18 18:00 UTC**. Block production averages ~5 s, slashing is live, and the validator active set was open from launch.
+
+| | |
+|---|---|
+| Chain ID | `nexarail-mainnet-1` |
+| Native denom | `unxrl` (1 NXRL = 1,000,000 unxrl) |
+| Block time | ~5 s |
+| Genesis SHA256 | `f84f5f03d4d54945153c3f68e20e9864fc03c7f35dbeec2b40274f18d152db32` |
+| Live status page | https://bookings-cpu.github.io/nexarail-status/ |
+| Genesis file | [GitHub release: `mainnet-genesis-nexarail-mainnet-1`](https://github.com/Bookings-cpu/nexarail/releases/tag/mainnet-genesis-nexarail-mainnet-1) |
+| Binary (linux/amd64) | [GitHub release: `v0.1.0-rc1-validator-recovery-hotfix`](https://github.com/Bookings-cpu/nexarail/releases/tag/v0.1.0-rc1-validator-recovery-hotfix) |
+| Validator onboarding runbook | [docs/mainnet/NEW_VALIDATOR_ONBOARDING.md](docs/mainnet/NEW_VALIDATOR_ONBOARDING.md) |
+| Validator broadcast / pin | [coordination/outreach/mainnet-validator-broadcast-2026-06-19.md](coordination/outreach/mainnet-validator-broadcast-2026-06-19.md) |
+
+**Slashing is live from block 1.** Downtime >50% over 10,000 blocks → 600 s jail + 0.01% slash. Double-sign → 5% slash + permanent tombstone. Never run two nodes with the same `priv_validator_key.json`.
+
+**Standard faucet grant for new validators:** 500 NXRL self-bond + 100 NXRL gas = **600 NXRL total**, drawn from the 150M NXRL `ecosystem_grants` bucket. Request format and full step-by-step are in the onboarding runbook above.
+
+### Testnet — `nexarail-testnet-1` — RETIRED 2026-06-20
+
+The controlled testnet served its purpose (validator readiness, slashing rehearsal, peer-mesh proving, faucet pipeline calibration) and was retired on 2026-06-20. See [coordination/outreach/2026-06-20-testnet-retirement-mainnet-migration.md](coordination/outreach/2026-06-20-testnet-retirement-mainnet-migration.md) for the migration notice. Historical testnet docs remain in `docs/testnet/` for reference.
+
+---
+
+## Developer quickstart (local devnet)
+
+For local development, the source tag `v0.1.0-rc1-cli-hotfix` provides a single-command devnet:
 
 ```bash
 git clone https://github.com/Bookings-cpu/nexarail.git
@@ -13,6 +40,8 @@ cd nexarail
 git checkout v0.1.0-rc1-cli-hotfix
 bash scripts/dev/run-nexarail-regression-matrix.sh --fast
 ```
+
+See [Reviewer Handoff](docs/release/REVIEWER_HANDOFF.md) | [Litepaper](docs/NEXARAIL_LITEPAPER.md) | [Quickstart](docs/release/RC1_QUICKSTART.md) | [Release Verification](docs/release/GITHUB_RELEASE_V0.1.0_RC1_VERIFICATION.md)
 
 ---
 
@@ -36,26 +65,23 @@ One command: verify package → launch devnet → run smoke tests → open dashb
 
 ---
 
-## Controlled Testnet RC1
+## Controlled Testnet RC1 — historical
+
+> The controlled testnet was retired on 2026-06-20 in favour of mainnet. The
+> table below is preserved as a historical record of where the testnet
+> programme stood at the point of retirement. For live status see the
+> mainnet section above.
 
 | Item | Detail |
 |---|---|
 | Packaging | **Complete** — RC1 release assets packaged and verified |
 | Local devnet | **Ready** — single-node and 5-agent modes available |
-| Controlled external-validator launch | **Preparing** — source-build path, intake, gentx, genesis, and peer tooling are ready |
-| Public launch | **NOT LAUNCHED** — final genesis and external validator evidence are pending |
-| Mainnet | **NO** — This is NOT mainnet |
-| Validator onboarding | Intake open - NodeSync accepted; additional validators pending |
-| Live flags | **Disabled by default** — all 6 live flags are `false` in genesis |
+| Controlled external-validator launch | **Completed** — testnet ran with 5 coord + 2 external validators (NodeSync, UTSA) |
+| Mainnet | **LIVE** — `nexarail-mainnet-1` launched 2026-06-18 18:00 UTC (see top of README) |
+| Validator onboarding | **Open on mainnet** — see [docs/mainnet/NEW_VALIDATOR_ONBOARDING.md](docs/mainnet/NEW_VALIDATOR_ONBOARDING.md) |
 | Product-flow suite | **487 pass / 0 fail** — full coverage validated |
 | REST parity | **36/36 (100%)** — REST readback parity confirmed |
-| Phase 17A dry-run | **PASS** — local five-validator launch path reached height 20 |
-| Phase 18A readiness | **Prepared** — internal coordinator candidate and public join package only |
-| Phase 18B intake | **Open** — NodeSync accepted; additional validator submissions pending; freeze decision `FREEZE_DEFER` |
-| Phase 18C operations | **Prepared** — launch rehearsal, incident response, support, and evidence pack |
-| First external gentx | **Accepted** — NodeSync gentx verified; DNS peer confirmed |
-| Freeze gate | `FREEZE_DEFER` — NodeSync DNS resolves but TCP 26656 is not reachable |
-| Launch status | `NOT_LAUNCHED` — controlled external testnet preparation only |
+| Testnet status | `RETIRED_2026-06-20` |
 
 ### Quick Links
 
