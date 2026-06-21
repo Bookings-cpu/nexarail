@@ -1,133 +1,121 @@
-# Decentralisation Ceremony — Plan
+# The Cut-Over — Decentralisation Ceremony Plan
 
-**Status:** Pre-work / planning. Final execution proposal must be
-submitted to governance ≥14 days before the ceremony block per
-`COORD_REWARDS_COMMITMENT_2026-06-21.md`.
+**Codename:** "The Cut-Over" (railway/infrastructure term for transition between systems)
+**Locked by founder:** 2026-06-21
+**Status:** Pre-work / planning. Final execution proposal must be submitted to governance ≥14 days before the ceremony block per `COORD_REWARDS_COMMITMENT_2026-06-21.md`.
 
-**Trigger:** When `count(active validators where coord!=true) >= 95`,
-the ceremony is **scheduled** for a specific block height ≥14 days out
-via a governance proposal.
+**Trigger:** When `count(active validators where coord!=true) >= 95`, the ceremony is **scheduled** for a specific block height ≥14 days out via a governance proposal.
 
-**Aim:** In a single coordinated block window, simultaneously:
-1. Reduce coord self-delegations from 5,000,000 NXRL each → target TBD
-   (likely 1,000,000 NXRL each)
-2. Redistribute the freed coord stake AND all custodied coord staking
-   rewards to non-coord active validators
-3. Convert the moment into a marketed ecosystem milestone
+## Architectural principle: skin without ceding
 
-## Why a coordinated block window
+The Cut-Over decentralises **block production** without transferring token ownership. Coord operator wallets retain economic ownership; voting weight is distributed across external validators via **delegation** (a standard Cosmos primitive), not transfer.
 
-If coord stake is reduced over many days, the optics are "stealth
-rebalance". If it happens in one block alongside external validator
-boosts, the optics are "ceremony" — a marketing moment that
-strengthens the chain's positioning and reinforces the on-chain
-narrative of progressive decentralisation.
+This is identical to how major Cosmos token holders (a16z, Polychain, Binance Labs) operate on every chain — they delegate their treasury across many validators to support security and decentralisation, retain token ownership and governance voting rights, and pay commission (typically 10%) to the validators that sign on their behalf.
 
-## Distribution formula (locked 2026-06-21 in commitment doc)
+The framing is honest and verifiable: anyone querying the chain sees Bradley's coord wallets delegated to external validators — no tokens leave Bradley's wallets.
 
-For the pool of (freed coord stake + custodied coord rewards):
+## Cut-Over execution — single block window
 
-- **70%** distributed equally to all non-coord active validators at
-  the ceremony block (rewards being there, not stake size)
-- **30%** distributed proportionally to non-coord bonded stake
-  (rewards skin in the game)
+In one coordinated block:
 
-This formula is symmetric and easy to verify on chain.
+1. **Reduce coord self-bonds** — 5,000,000 → 2,500,000 NXRL each. Freed tokens (5 × 2,500,000 = 12,500,000 NXRL) return to coord operator wallets as liquid balance. **No tokens leave Bradley's control.**
+2. **Withdraw custodied coord rewards** — pull all accumulated staking rewards from coord validators into coord operator wallets.
+3. **Delegate freed coord stake + custodied rewards** — coord operator wallets delegate the 12.5M+ pool across the 95+ non-coord active validators, using the 70/30 distribution formula.
+
+## Distribution formula (locked)
+
+For the pool of delegated stake:
+
+- **70%** distributed equally to all non-coord active validators at the Cut-Over block (rewards participation, not stake size)
+- **30%** distributed proportionally to non-coord bonded stake (rewards skin in the game from external operators)
+
+This formula was locked in `COORD_REWARDS_COMMITMENT_2026-06-21.md`.
 
 ## Concrete example (illustrative — actual values calculated at ceremony block)
 
 Assumptions for example only:
-- 95 non-coord active validators at ceremony block
+- 95 non-coord active validators at Cut-Over block
 - Each at 500 NXRL self-bond (matching today's distribution)
-- Custodied coord rewards: ~3M NXRL (assumes mint at 12% for 90 days
-  on 25M coord-bonded stake)
-- Coord reduction: 5M → 1M = 4M × 5 = 20M NXRL freed
-- Total ceremony pool: 23M NXRL
+- Custodied coord rewards: ~700,000 NXRL (estimated ~3 months at 12% inflation on 25M coord-bonded)
+- Coord reduction: 5M → 2.5M each = 12,500,000 NXRL freed
+- Total delegation pool: 13,200,000 NXRL
 
-Distribution:
-- 70% equal: 16.1M NXRL / 95 validators = 169,474 NXRL each
-- 30% proportional: 6.9M NXRL × (validator's stake / 47,500 total) = ~72,632 NXRL each (assuming equal stakes)
-- Per-validator ceremony bonus: ~242,106 NXRL
+Per-validator delegation:
+- 70% equal: 9,240,000 NXRL / 95 = 97,263 NXRL each
+- 30% proportional: 3,960,000 NXRL × (validator's stake / 47,500 total) = ~41,684 NXRL each (assuming equal stakes)
+- Per-validator delegation amount: ~138,947 NXRL
 
-Post-ceremony state (illustrative):
-- Each non-coord validator: 500 + 242,106 = 242,606 NXRL self-bond
-- Coord: 1M each × 5 = 5M NXRL bonded
-- Non-coord total: 242,606 × 95 = 23,047,570 NXRL bonded
-- Total bonded: 28,047,570 NXRL
-- Coord power share: 17.83%
-- External power share: 82.17%
+Post-Cut-Over power shares:
+- Coord self-bonded: 2.5M × 5 = 12,500,000 NXRL (49.9%)
+- Non-coord total: 47,500 (own bonds) + 13,200,000 (Bradley's delegations) = 13,247,500 NXRL (50.1%)
+- Coord power share: 49.9%
+- External power share: 50.1%
 
-**Result: chain crosses the >67% external power threshold —
-"coord-irrelevant" by the definition in the strategic brief.**
+**Crosses the >50% external power threshold — coord is no longer the majority.**
+
+## Bradley's position post-Cut-Over
+
+- Tokens owned: **985M+ NXRL — unchanged**
+- Tokens bonded under coord validators: 12.5M (down from 25M)
+- Tokens delegated to external validators: 13.2M (new)
+- **Total votable stake: 25.7M NXRL — increased by ~700k** (the custodied rewards that didn't exist before mint enablement)
+- Validators receiving commission on Bradley's delegations: 95
+- Commission flowing to validators per year: ~150,000 NXRL/year (10% of ~1.5M annual yield on 12.5M delegated at 12% inflation), spread across 95 validators ≈ 1,579 NXRL/year per validator (in addition to their own self-bond yield)
+- Governance voting power: 100% retained (delegators vote with their stake)
+
+## What external validators get
+
+- Block signing rewards: continue earning as before
+- Commission income: 10% of yield on Bradley's delegated stake = ~1,500 NXRL/year per validator (additional)
+- Higher bonded power: their validator entries on the explorer/status page show much larger bonded amounts, attracting future external delegators
+- A real reason to keep their nodes up: stake from a major holder
+
+## Public framing (honest, defensible)
+
+> "On the day NexaRail reached 100 validators, we ran The Cut-Over — the founder delegated 12.5M NXRL of coord-attributable stake across the 95 external validators, halving coord voting share and doubling external. Coord stake remains in coord operator custody as is standard for major token holders on Cosmos chains; the founder retains governance voting rights via the delegated stake. Over time, as external delegators arrive and the ecosystem matures, the founder's relative voting share will dilute naturally."
+
+This framing is true, verifiable on chain, and matches how every Cosmos chain with a major founder allocation actually works (Cosmos Hub, Osmosis, Juno, Stride, Sei — all have founders/foundations delegating significant treasury across the validator set).
+
+## What the Cut-Over does NOT do
+
+- **Does not transfer ownership of NXRL to external validators.** Tokens stay in coord operator wallets. Validators earn commission only.
+- **Does not surrender Bradley's governance voting power.** Delegated stake votes with the delegator (Bradley), not the validator.
+- **Does not preclude unbonding.** The standard 21-day unbonding window applies to delegations. If a specific external validator misbehaves, Bradley can unbond from them and redelegate to another.
 
 ## Execution mechanism
 
-### Approach 1 — Multiple individual txs in a single block (simplest)
+### Approach 1 — Multiple individual txs in 2-3 blocks (simplest, recommend)
 
-Submit ~100 separate txs in one bundle:
-- 5× `MsgUndelegate` (coord wallets reducing self-bond)
-- 5× `MsgWithdrawDelegatorReward` (coord pulling custodied rewards)
-- ~95× `MsgSend` (custody wallet → non-coord operator wallets)
-- ~95× `MsgDelegate` (non-coord operators → their own valoper)
+Submit a coordinated tx batch:
+- 5× `MsgUndelegate` (coord wallets reducing self-bond by 2.5M each)
+- 5× `MsgWithdrawDelegatorReward` (coord pulling custodied rewards from their own validators)
+- ~95× `MsgDelegate` per coord wallet × 5 coord wallets = 475 delegation txs total (parallelisable)
 
-Pros: standard cosmos primitives, fully auditable
-Cons: blocks have tx limits — would need ~3-4 blocks not 1
-strictly. "Ceremony window" of 2-3 blocks is fine narratively.
+Block tx limits cap this to 2-3 blocks of execution — fine narratively as a "Cut-Over window" rather than single block.
 
-### Approach 2 — Custom x/treasury distribution (cleaner)
+Pros: standard cosmos primitives, fully auditable, no module changes
+Cons: 475 delegation txs is a lot — could optimise by batching into one larger redelegation tx per coord, but cosmos doesn't natively support 1-to-many MsgMultiDelegate. Multi-tx is the path of least resistance.
 
-Use the existing `x/treasury` module's spend execution path. Create a
-single "milestone disbursement" approved by governance proposal that
-fans out to all recipients atomically.
+### Approach 2 — Custom x/treasury orchestration (cleaner if treasury live)
+
+If `x/treasury.LiveEnabled = true` by Cut-Over time, the treasury module can orchestrate the delegation as a single approved disbursement, fanning out to all recipient validators atomically.
 
 Pros: single proposal, single approval, atomic execution
-Cons: requires `x/treasury.LiveEnabled = true` first (currently false
-per litepaper). Could be combined: enable treasury then run
-ceremony in the same governance window.
+Cons: requires `x/treasury.LiveEnabled = true` first. Could be combined: enable treasury then run Cut-Over in the same governance window.
 
-**Recommendation: Approach 2.** Lines up the live-flag flip with a
-high-stakes use case, plus simpler optics.
+**Recommendation: Approach 2 if treasury is live, otherwise Approach 1.**
 
-### Approach 3 — Custom ceremony module (overkill)
+## Inputs needed at Cut-Over block
 
-Build a dedicated x/decentralisation module. Reject — single-use
-infrastructure, premature.
+1. **Active set snapshot** — frozen at the Cut-Over block. The proposal text declares "all non-coord active validators in the active set at block N".
+2. **Custodied reward total** — calculated at the day-before-Cut-Over block. Verifiable by querying each coord operator wallet's `WithdrawDelegatorReward` history minus any already-restaked.
+3. **Coord reduction target** — locked at 2,500,000 NXRL each per founder decision 2026-06-21.
 
-## Inputs needed before submitting ceremony proposal
+## Open follow-ups (not blocking ceremony scheduling)
 
-1. **Final coord reduction target** — recommend 1M each (current
-  scoping); could be 2M for less drastic optics. Bradley's call.
-2. **External self-bond cap raise** — currently 500 NXRL is the bar
-  for new validators. Ceremony recipients will receive ~240k NXRL
-  per the example above. Need to ensure non-coord wallets can accept
-  delegations of that size (they can — it's just a `MsgDelegate`).
-3. **Distribution recipient list** — frozen at ceremony block. The
-  proposal text declares "all non-coord active validators in the
-  active set at block N" where N is the ceremony block.
-4. **Custodied reward total** — calculated at the day-before-ceremony
-  block. Verifiable by querying each coord operator wallet.
+- **Live treasury flag**: do we enable `x/treasury.LiveEnabled` as part of the Cut-Over proposal, or in a separate governance window before? Recommend separate window 2-4 weeks before Cut-Over to validate end-to-end.
+- **External cap raise**: currently 500 NXRL bar for new validators. Once Cut-Over delegations bring external validators to ~140k bonded each, this looks healthy.
 
-## Open questions for Bradley
+## Pre-ceremony state simulator
 
-1. **Coord reduction target**: 1M each (sharp drop) or 2M each
-  (gentler)?
-2. **Active set during ceremony**: do nothing about the active set
-  cap (currently 100)? Or raise to e.g. 150 if we reach 100 fast?
-3. **Branding**: name the ceremony? ("NexaRail Devolution", "The
-  Handover", "Threshold Event", etc.) — affects marketing copy.
-4. **Live treasury flag**: do we enable `x/treasury.LiveEnabled` as
-  part of the ceremony proposal, or in a separate governance window
-  before?
-
-## Pre-ceremony script
-
-A status script (`scripts/mainnet/ceremony-state.sh`) prints the
-current ceremony arithmetic on demand so we can see where we'd land
-if the ceremony fired today. Run anytime, no chain mutation.
-
-Outputs:
-- Current active validator count
-- Coord vs non-coord bonded
-- Custodied coord rewards estimate
-- Per-validator distribution under the 70/30 formula
-- Post-ceremony coord vs external power %
+`scripts/mainnet/ceremony-state.sh` prints the current Cut-Over arithmetic on demand. Read-only. Run anytime to see how the ceremony would play out at the current chain state.
