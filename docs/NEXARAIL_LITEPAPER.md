@@ -1,8 +1,8 @@
 # NexaRail Network Litepaper
 
-**Version:** 1.0
-**Date:** 2026-05-27
-**Chain:** NexaRail Network
+**Version:** 2.0
+**Date:** 2026-06-21  (v1.0 was 2026-05-27, pre-mainnet)
+**Chain:** `nexarail-mainnet-1` — LIVE since 2026-06-18 18:00 UTC
 **Framework:** Cosmos SDK v0.47.17 + CometBFT v0.37.18
 **Native Coin:** NXRL (base denom: `unxrl`, 1 NXRL = 1,000,000 unxrl)
 **Address prefix:** `nxr`
@@ -11,17 +11,15 @@
 
 ## 1. Status Disclaimer
 
-**Please read carefully.** This litepaper describes a network under active development.
+**Please read carefully.** This litepaper describes a live network under active development.
 
-- **Mainnet is not live.** NexaRail has no public mainnet. The network described in this document is in testnet preparation.
-- **Controlled testnet preparation.** The current testnet environment (`nexarail-agent-testnet-1`) is a controlled agent testnet. A public testnet (`nexarail-testnet-1`) is planned but not yet launched.
-- **Agent runtime readiness has advanced.** The local 5-agent testnet has passed clean-spawn query/readback, governance lifecycle, a 60-minute soak, runtime bank transaction inclusion, a restart matrix, and a full local product-flow rehearsal with 469 checks passing. This is local agent-testnet evidence only.
+- **Mainnet is live.** `nexarail-mainnet-1` launched 2026-06-18 18:00 UTC. ~5s blocks, BFT consensus across an open validator set. Status: https://bookings-cpu.github.io/nexarail-status/
+- **External validator onboarding is OPEN.** Onboarding runbook at `docs/mainnet/NEW_VALIDATOR_ONBOARDING.md`. The validator set grew from 7 at genesis (5 coord + 2 external) to 23+ external validators within the first week, and continues to grow. New validators receive a 600 NXRL bootstrap grant from `ecosystem_grants` after a sync-proof gate.
 - **No token sale.** NXRL has not been offered for sale through any mechanism — no ICO, IEO, IDO, private sale, or public sale. There is no way to purchase NXRL. Any claim to the contrary is fraudulent.
-- **Testnet tokens have no monetary value.** Tokens on the testnet exist solely for testing purposes. They cannot be exchanged, traded, or transferred for value.
-- **Live-funds modules disabled by default.** All modules capable of moving tokens have their `LiveEnabled` flags set to `false` by default. These flags require governance approval to activate, and there is no expectation that they will be enabled on testnet.
-- **External validator onboarding is pending.** The current validator set consists of autonomous agent validators operated by the development team. This does not represent external decentralisation.
-- **Agent validators do not represent external decentralisation.** The current agent-based validator set is a testing mechanism and should not be interpreted as a decentralised validator cohort.
-- **No investment.** Participation in any NexaRail testnet is not an investment. No financial returns are promised, expected, or implied.
+- **No DEX listing yet.** NXRL has no listed price, no liquidity pools, no market quote. DEX listing is on the roadmap but has not occurred. Anyone claiming to sell NXRL is operating fraudulently.
+- **Live-funds modules disabled by default.** All modules capable of moving tokens (`x/escrow`, `x/payout`, `x/settlement`, `x/treasury`) have their `LiveEnabled` flags set to `false` by default. These flags require governance approval to activate.
+- **Coord-side power concentration is high.** As of mainnet launch, the five coordinator validators (alpha/bravo/charlie/delta/echo) hold approximately 99.97% of bonded voting power. A planned "Cut-Over" ceremony at 100 active validators will rebalance toward >50% external block-production share via founder-side delegation (not token transfer). See `docs/mainnet/DECENTRALISATION_CEREMONY_PLAN.md`.
+- **No investment.** Participation in NexaRail mainnet validation is not an investment. No financial returns are promised, expected, or implied beyond standard staking yield from the chain's own inflation parameters.
 - **Legal review pending.** Formal independent legal review has not been completed.
 - **External security audit pending.** A formal third-party security audit has not been completed.
 
@@ -31,13 +29,15 @@
 
 NexaRail is a sovereign Layer 1 blockchain built on the Cosmos SDK and CometBFT consensus engine, designed to serve as payment and settlement infrastructure. It targets a set of real-world financial workflows that remain fragmented, slow, or trust-dependent in existing systems.
 
-The network provides purpose-built modules for merchant payment processing, settlement with programmable fee routing, escrow custody, automated payouts, and treasury management. All fund-moving functionality is gated behind governance-controlled flags that default to disabled — live movement of tokens is not active on any running network.
+The network provides purpose-built modules for merchant payment processing, settlement with programmable fee routing, escrow custody, automated payouts, and treasury management. All fund-moving functionality is gated behind governance-controlled flags that default to disabled — live movement of tokens is not active by default.
 
 The native coin is NXRL, with a base denom of `unxrl`. The address prefix is `nxr`.
 
-Development follows a progressive decentralisation path: from the current agent-based testnet, through external validator onboarding, a controlled public testnet, external security and legal review, and — only after all reviews are complete — a mainnet candidate.
+**Mainnet (`nexarail-mainnet-1`) launched 2026-06-18 18:00 UTC** with a 7-validator genesis set (5 coordinator + 2 external) and has since onboarded additional external validators via an open application process. As of v2.0 of this litepaper, the active set is 23 bonded validators and growing at approximately 15 onboardings per day.
 
-As of Phase 10B.1, the local agent-testnet runtime has advanced materially: the 5-agent environment has passed a 60-minute soak, a restart matrix after a consensus-param store restart fix, and a full product-flow rehearsal covering merchant onboarding, settlement, escrow, treasury, payout, safety checks, and final live-flag readback. External validators remain pending, and this evidence does not claim external decentralisation.
+A governance proposal to enable the standard Cosmos SDK mint module (5%-12% floating inflation, 67% bonded target) was submitted on 2026-06-21 and is currently in the voting period. Once executed, this begins continuous validator staking yield.
+
+The decentralisation path is staged: open external validator onboarding (live now), staking yield activation (in vote), a planned "Cut-Over" ceremony at 100 active validators that rebalances voting share via founder-side delegation, external security audit, legal review, and DEX listing.
 
 ---
 
@@ -92,16 +92,26 @@ NexaRail does not aim to compete with general-purpose smart contract platforms. 
 | **Address prefix** | `nxr` |
 | **Binary** | `nexaraild` |
 | **Language** | Go 1.22+ |
-| **Testnet chain ID (agent)** | `nexarail-agent-testnet-1` |
-| **Testnet chain ID (planned)** | `nexarail-testnet-1` |
-| **Devnet chain ID** | `nexarail-devnet-1` |
+| **Mainnet chain ID** | `nexarail-mainnet-1` (LIVE since 2026-06-18 18:00 UTC) |
+| **Devnet chain ID** | `nexarail-devnet-1` (local development) |
+| **Retired testnet chain IDs** | `nexarail-testnet-1`, `nexarail-agent-testnet-1` (retired 2026-06-20) |
+| **Total supply** | 1,000,000,000 NXRL (fixed, plus mint module inflation post-vote) |
+| **Block time** | ~5s |
 
 ### Networking
 
-- CometBFT RPC: port 26657 (default)
+- CometBFT RPC: port 26657 (default) — coord home overrides per-node
 - Cosmos SDK REST API: port 1317 (default)
 - gRPC: port 9090 (default)
 - P2P: port 26656 (default)
+
+### Mainnet endpoints
+
+- Genesis file: https://github.com/Bookings-cpu/nexarail/releases/tag/mainnet-genesis-nexarail-mainnet-1
+- Live status page: https://bookings-cpu.github.io/nexarail-status/
+- IPv6 public peer: `96e659f9a87723304dcd614e3ca89d9b6daf26cc@[2a04:4a43:867f:f226:ca7:b2ed:6262:4005]:32656`
+- IPv4 public peer (via bore.pub relay): `96e659f9a87723304dcd614e3ca89d9b6daf26cc@159.223.110.159:32656` (no SLA; full sentry deployment pending)
+- Slashing: live from block 1. Downtime >50% over 10,000 blocks → 600s jail + 0.01% slash. Double-sign → 5% slash + permanent tombstone.
 
 ### Standard SDK Modules
 
@@ -225,38 +235,40 @@ To be explicit: **no live funds can move on any NexaRail network without a gover
 
 NexaRail uses CometBFT v0.37.18 (a fork of Tendermint) for Byzantine Fault Tolerant consensus. Block production requires >2/3 validator voting power to sign each block. The validator set is defined in genesis and managed through staking and governance.
 
-### Current validator set: autonomous agent testnet
+### Current validator set: open, mainnet, growing
 
-The current running network (`nexarail-agent-testnet-1`) uses autonomous agent validators operated by the development team. These agents have:
-- Produced blocks with multi-validator consensus
-- Passed full query/readback across status, validators, balances, accounts, module params, and live flags
-- Executed bank transfers with inclusion code `0`
-- Executed governance proposals with final state readback
-- Completed a 60-minute local soak with stable peers and validator set
-- Passed a restart matrix covering clean stop/restart, one-node restart, all-node restart, and post-soak restart recovery
-- Maintained peer connectivity
+Mainnet (`nexarail-mainnet-1`) launched 2026-06-18 18:00 UTC with a 7-validator genesis set: five development-operated coordinator validators (`nxrl-controlled-alpha/bravo/charlie/delta/echo`) and two external validators (NODESYNC, UTSA). External validator onboarding has been open from launch and the active set has grown to 23+ validators within the first week.
 
-**Important:** The agent validator set does not represent external decentralisation. It is a testing mechanism.
+### External validator onboarding: live
 
-### External validator onboarding: pending
+The onboarding process is documented in `docs/mainnet/NEW_VALIDATOR_ONBOARDING.md` and produces:
 
-External validator onboarding (Phase B of the development roadmap) is designed but not yet executed. The process involves:
-1. Controlled application and review
-2. Gentx collection and validation
-3. Genesis assembly and signing ceremony
-4. Coordinated launch
+1. Operator self-generates an operator key and a sync node
+2. Operator syncs from genesis until `catching_up:false`
+3. Operator submits a request with their operator address, consensus pubkey, moniker, and contact
+4. Sync-proof gate: coordinator verifies the operator is running an actual synced node
+5. Coordinator issues a 600 NXRL bootstrap grant from `ecosystem_grants` (500 NXRL self-bond + 100 NXRL gas runway)
+6. Operator submits `create-validator` from their newly-funded wallet
+7. Validator joins active set within one block
+
+Pace: approximately 15 onboardings per day during the first week. Active set max is currently 100 validators.
 
 ### Target validator cohort
 
 | Cohort | Size | Status |
 |---|---|---|
-| Current (agent) | 5 agents | Running |
-| External (target) | 3 minimum, 5 preferred, 7 strong | Pending |
-| Public testnet | TBD | Planned |
+| Coord (launched) | 5 | Live |
+| Genesis external (NODESYNC + UTSA) | 2 | Live |
+| External (additional) | growing — 16+ as of v2.0 of litepaper | Live, open queue |
+| Active set cap (current) | 100 | Configurable via governance |
 
-### Decentralisation note
+### Coordinator power concentration & The Cut-Over
 
-Progressive decentralisation is the stated path, but no external validators have been onboarded as of this writing. The current network is development-operated. External validation does not yet exist. Claims about the network being "decentralised" would be inaccurate.
+Because coordinator validators self-bonded 5M NXRL each at genesis (vs 500 NXRL standard for external validators), the coord cohort holds approximately 99.97% of bonded voting power at the time of v2.0 of this litepaper.
+
+A planned ceremony codenamed "**The Cut-Over**" will rebalance voting power when the chain reaches 100 active validators. The mechanism is **delegation, not transfer**: coord wallets reduce self-bonds from 5M → 2.5M each, then delegate the freed 12.5M (plus any custodied coord staking rewards accumulated post-mint-enablement) across non-coord active validators using a 70/30 formula. This brings block-production share to approximately 50/50 coord/external while preserving founder economic ownership and governance voting rights (delegators vote with their stake on Cosmos).
+
+Full plan: `docs/mainnet/DECENTRALISATION_CEREMONY_PLAN.md`. Founder commitment doc: `docs/mainnet/COORD_REWARDS_COMMITMENT_2026-06-21.md`.
 
 ---
 
@@ -305,15 +317,19 @@ Live fund flags cannot be changed by any entity other than governance. There is 
 - Tests include: unit tests, keeper tests, integration/app tests, invariant tests, fuzz tests (where applicable)
 - All tests pass on `go test ./...`
 
-### Agent testnet
+### Mainnet (`nexarail-mainnet-1`)
 
-- 5-agent validator set producing blocks
-- Full local query/readback passed: Phase 9T `85 pass / 0 fail / 0 skip`
-- 60-minute local soak passed: Phase 9U `3602s`, height `12` to `685`, query total `425 pass / 0 fail / 0 skip`
-- Bank transaction confirmed with inclusion code `0`
-- Governance lifecycle executed with final state readback
-- Restart matrix passed after Phase 9V consensus-param store fix, including a post-60-minute-soak restart from height `695` to `698`
-- Peer connectivity maintained
+- Genesis: 2026-06-18 18:00 UTC, 7 validators (5 coord + 2 external)
+- Active set as of v2.0 of this litepaper: 23 bonded validators
+- Block production: ~5 second blocks, no halts since launch-day localhost-mesh fix (see incident log in `memory/2026-06-19.md`)
+- Slashing active from block 1
+- Governance: Proposal 1 (enable mint module for staking yield) submitted 2026-06-21, in voting period
+- Faucet operational: 16 grants distributed in first 24 hours of v2.0 cycle, ~9,600 NXRL out of 150M `ecosystem_grants` reserve
+
+### Retired testnets
+
+- `nexarail-testnet-1` retired 2026-06-20 (validator readiness, slashing rehearsal, faucet calibration completed)
+- `nexarail-agent-testnet-1` retired (precursor agent testnet, runtime hardening completed)
 
 ### Tooling
 
@@ -326,55 +342,59 @@ Live fund flags cannot be changed by any entity other than governance. There is 
 
 ### Limitations to be clear about
 
-- **Not externally decentralised.** Validator set is development-operated agents.
+- **Coord-side power is concentrated.** ~99.97% of bonded voting power is held by the 5 coordinator validators at the time of v2.0. The Cut-Over ceremony at 100 validators will rebalance to ~50/50 block-production share via founder-side delegation, with founder retaining governance voting rights.
 - **Not audited.** No formal third-party security audit.
 - **Not legally reviewed.** No formal independent legal review.
-- **Public/external testnet state validation pending.** Local agent query/readback evidence has passed; external-validator and public-endpoint validation are still pending.
-- **No bridge or stablecoin registry.** These are deferred.
+- **Live-funds modules still disabled.** All six payment-vertical modules (`x/fees`, `x/merchant`, `x/settlement`, `x/escrow`, `x/payout`, `x/treasury`) have their LiveEnabled flags `false`. Governance proposals to enable them are sequenced behind security audit completion.
+- **No bridge or stablecoin registry.** Deferred.
 - **No token sale.** NXRL has not been offered for sale.
+- **No DEX listing.** No price discovery venue exists yet. Anyone advertising NXRL purchase opportunities is fraudulent.
+- **Public RPC infrastructure pending.** The mainnet RPC, REST, and explorer surfaces require a dedicated sentry node (Oracle Cloud free-tier VM in provisioning queue) before public-facing endpoints are stable.
 
 ---
 
 ## 11. Roadmap
 
-### Phase A: Controlled agent testnet hardening (current phase)
+### Phases A–C completed pre-launch
 
-- Autonomous agent validators producing blocks
-- Module integration validation
-- Governance lifecycle validation
-- State query and readback hardening
-- Invariant and stress testing
-- This litepaper
+- Phase A: Controlled agent testnet hardening — **COMPLETE**
+- Phase B: External validator cohort onboarding — **COMPLETE** (genesis NodeSync + UTSA, then open queue from mainnet launch)
+- Phase C: Public testnet (`nexarail-testnet-1`) — **COMPLETE** (retired 2026-06-20 after serving its calibration purpose)
 
-### Phase B: External validator cohort
+### Phase 1 (current — mainnet operations, week 1+)
 
-- Controlled validator application process (design complete — `docs/testnet/`)
-- Gentx collection and validation
-- Genesis assembly and coordinator runbook
-- External validator launch
-- Agent validators phased out or reduced
+- Open external validator queue (live)
+- Faucet operational from `ecosystem_grants` (live)
+- Mainnet status page (live)
+- Validator coordination Discord (live)
+- Onboarding runbook (live, hardened with self-bond decimal warning after first two operator typos)
 
-### Phase C: Controlled public testnet
+### Phase 2 (immediate — staking yield activation)
 
-- Public RPC, REST, and gRPC endpoints
-- Faucet for testnet tokens
-- Public block explorer
-- Discord/Telegram support channels
-- Bug bounty programme
-- Documentation and onboarding guides
+- Mint module enablement proposal (Proposal 1, in voting period) — executes 2026-06-26
+- Coord rewards custody commitment (documented, on-chain attestation pending vote execution)
 
-### Phase D: External security and legal review
+### Phase 3 (next 30 days — sentry + explorer + reach)
 
-- Third-party security audit by a recognised blockchain security firm
-- Independent legal review covering token status, regulatory classification, and jurisdictional risk
-- Findings remediation and re-audit
+- Oracle Cloud Always Free Ampere sentry deployment (blocked on capacity)
+- Public RPC + REST endpoints surfacing via sentry
+- Block explorer (ping.pub fork) deployment
+- Validator recruitment outreach (target: 100 active validators)
 
-### Phase E: Mainnet candidate (only after all reviews)
+### Phase 4 (at 100 active validators — The Cut-Over)
 
-- Only after Phases A–D are complete
-- Only after security audit findings are resolved
-- Only after legal review confirms an acceptable risk profile
-- No mainnet launch date has been set. No commitment to mainnet has been made.
+- Coord self-bond reduction 5M → 2.5M each
+- Delegation of 12.5M (plus custodied rewards) across non-coord active validators using 70/30 formula
+- Block-production share rebalances to ~50/50
+- Marketing moment positioned as the ecosystem's transition from coord-bootstrapped to community-secured
+
+### Phase 5 (Q3-Q4 2026 — utility activation + listings)
+
+- Third-party security audit
+- Governance proposals enabling LiveEnabled flags per payment-vertical module (escrow, payout, settlement, treasury)
+- Independent legal review covering token classification, regulatory positioning, jurisdictional risk
+- DEX listings (Osmosis pool, others TBD)
+- First merchant onboardings via the live `x/merchant` and `x/settlement` modules
 
 ---
 
@@ -382,15 +402,16 @@ Live fund flags cannot be changed by any entity other than governance. There is 
 
 This section is a consolidated list of limitations that apply to NexaRail in its current state.
 
-1. **Not mainnet.** NexaRail has no public mainnet. All references to the network refer to testnet or devnet environments.
-2. **Not externally decentralised.** The validator set is currently development-operated agents. External validators have not been onboarded.
-3. **No external audit.** A formal third-party security audit has not been completed. Internal threat models and audit preparation packages exist but are not a substitute for external review.
-4. **No token sale.** NXRL has not been offered for sale through any mechanism. There is no way to purchase NXRL. Testnet tokens have zero monetary value.
-5. **Validator distribution deferred.** A validator distribution design exists but has not been implemented. Current staking follows standard Cosmos SDK staking with a single delegator on each validator.
-6. **Bridge and stablecoin registry deferred.** IBC integration and stablecoin registry are on the deferred list. The network currently operates as an isolated sovereign chain.
-7. **Live funds disabled by default.** All live fund movement flags default to `false`. No funds move without governance approval.
+1. **Mainnet is live but early.** First week of operation. Onboarding and infrastructure surfaces are still being built out.
+2. **Coord-side power concentration.** ~99.97% of bonded voting power is held by 5 coordinator validators at the time of v2.0. Decentralisation via The Cut-Over is scheduled at 100 active validators.
+3. **No external audit.** A formal third-party security audit has not been completed.
+4. **No token sale.** NXRL has not been offered for sale through any mechanism. There is no way to purchase NXRL. Testnet tokens never had monetary value; mainnet tokens have no listed price yet.
+5. **No DEX listing.** No liquidity venue exists yet.
+6. **Bridge and stablecoin registry deferred.** IBC integration and stablecoin registry are on the deferred list. The network operates as an isolated sovereign chain.
+7. **Live funds disabled by default.** All live fund movement flags default to `false`. No funds move through `x/escrow`, `x/payout`, `x/settlement`, or `x/treasury` payment paths without governance approval.
 8. **Legal review pending.** Formal independent legal review has not been completed.
-9. **Roadmap is provisional.** All phases, dates, and targets are subject to change. No timeline commitments are made.
+9. **Public RPC + explorer infrastructure pending.** Sentry deployment is in the Oracle Cloud Free Tier queue.
+10. **Roadmap is provisional.** All phases, dates, and targets are subject to change. No timeline commitments are made.
 
 ---
 
@@ -438,12 +459,12 @@ None of the above replaces a formal third-party security audit. An external audi
 
 ## 14. Conclusion
 
-NexaRail is a Cosmos SDK sovereign L1 being built for payment and settlement infrastructure. The network has six purpose-built modules for merchant payments, settlement, escrow, payouts, and treasury management, all behind governance-controlled live-funds flags that default to disabled.
+NexaRail is a Cosmos SDK sovereign L1 built for payment and settlement infrastructure. The network has six purpose-built modules for merchant payments, settlement, escrow, payouts, and treasury management, currently gated behind governance-controlled live-funds flags that default to disabled pending external security audit.
 
-The current state is an agent testnet with approximately 500+ passing tests, multi-validator block production, validated query/readback, a 60-minute local soak, runtime tx inclusion, restart recovery, validated governance workflows, and a local full product-flow rehearsal that passed 469 checks. External validator onboarding, public testnet, security audit, and legal review are all ahead.
+**Mainnet has been live since 2026-06-18 18:00 UTC.** The validator set has grown from 7 at genesis to 23+ active validators, with continuous external onboarding via an open application process. A governance proposal to enable staking yield via the standard mint module is in voting and executes 2026-06-26. Coord-side voting concentration will rebalance via "The Cut-Over" delegation ceremony when the chain reaches 100 active validators.
 
-**The honest summary:** advanced technical readiness for a testnet-stage project. Not mainnet. Not externally decentralised. Not a token sale. Not an investment. Live funds are disabled. If you are a technical validator operator or ecosystem reviewer, the infrastructure is available for evaluation. If you are looking for a token to buy, an investment opportunity, or a live mainnet, this is not that.
+**The honest summary:** mainnet is live with active block production, BFT consensus, slashing, and an open external validator queue. Validator economics are about to activate via the in-vote mint proposal. Payment-vertical live functionality is sequenced behind security audit completion. There is no DEX listing, no token sale, no investment offer. If you are a validator operator, onboarding is open and documented. If you are looking to acquire NXRL through any market, that does not exist yet — anyone advertising otherwise is fraudulent.
 
 ---
 
-**NexaRail Network — Payment Infrastructure L1. In development.**
+**NexaRail Network — Payment Infrastructure L1. Live mainnet. Open validator queue.**
