@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.mint.v1beta1.MsgUpdateParams",
+      "authority": "nxr10d07y265gmmuvt4z0w9aw880jnsr700js8jz70",
+      "params": {
+        "mint_denom": "unxrl",
+        "inflation_rate_change": "0.100000000000000000",
+        "inflation_max": "0.120000000000000000",
+        "inflation_min": "0.050000000000000000",
+        "goal_bonded": "0.670000000000000000",
+        "blocks_per_year": "6311520"
+      }
+    }
+  ],
+  "metadata": "github.com/Bookings-cpu/nexarail/blob/main/docs/mainnet/MINT_ENABLEMENT_SCOPING_2026-06-21.md",
+  "deposit": "1000000000unxrl",
+  "title": "Enable NXRL staking yield",
+  "summary": "Change mint params from 0 inflation to 5-12% floating (goal 67% bonded). Validators earn rewards from next block. Coord rewards committed to decentralisation ceremony at 100 validators. Full scoping in metadata link."
+}
