@@ -13,9 +13,20 @@ P2P_PORT=32656
 # SSH public key — generated 2026-06-21 on Bradley's Mac (~/.ssh/nexarail-sentry-oracle).
 SSH_PUB="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMjeULcMG2XrgPi1LerE4ufan0GfdmWTmw1camRCEIKN nexarail-sentry-oracle-2026-06-21"
 
-# Tenancy = the root compartment.
-COMPARTMENT_ID="$(oci iam compartment list --compartment-id-in-subtree false \
-  --access-level ANY --query 'data[0]."compartment-id"' --raw-output)"
+# Tenancy OCID — Cloud Shell sets OCI_TENANCY automatically.
+if [ -z "${OCI_TENANCY:-}" ]; then
+  echo "ERROR: \$OCI_TENANCY is not set."
+  echo
+  echo "This script must run inside Oracle Cloud Shell (browser terminal in the"
+  echo "OCI Console), not your local Mac terminal."
+  echo
+  echo "  1. Open https://cloud.oracle.com"
+  echo "  2. Click the '>_' icon (top-right, near your avatar) to open Cloud Shell."
+  echo "  3. Re-paste:"
+  echo "     curl -fsSL https://raw.githubusercontent.com/Bookings-cpu/nexarail/main/scripts/mainnet/oracle-sentry-bootstrap.sh | bash"
+  exit 2
+fi
+COMPARTMENT_ID="$OCI_TENANCY"
 echo "tenancy/root compartment: $COMPARTMENT_ID"
 
 REGION="$(oci iam region-subscription list \
