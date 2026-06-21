@@ -19,10 +19,17 @@ NexaRail mainnet launched on **2026-06-18 18:00 UTC**. Block production averages
 | Binary (linux/amd64) | [GitHub release: `v0.1.0-rc1-validator-recovery-hotfix`](https://github.com/Bookings-cpu/nexarail/releases/tag/v0.1.0-rc1-validator-recovery-hotfix) |
 | Validator onboarding runbook | [docs/mainnet/NEW_VALIDATOR_ONBOARDING.md](docs/mainnet/NEW_VALIDATOR_ONBOARDING.md) |
 | Validator broadcast / pin | [coordination/outreach/mainnet-validator-broadcast-2026-06-19.md](coordination/outreach/mainnet-validator-broadcast-2026-06-19.md) |
+| Mint enablement scoping | [docs/mainnet/MINT_ENABLEMENT_SCOPING_2026-06-21.md](docs/mainnet/MINT_ENABLEMENT_SCOPING_2026-06-21.md) |
+| The Cut-Over (decentralisation ceremony) plan | [docs/mainnet/DECENTRALISATION_CEREMONY_PLAN.md](docs/mainnet/DECENTRALISATION_CEREMONY_PLAN.md) |
+| Coord rewards custody commitment | [docs/mainnet/COORD_REWARDS_COMMITMENT_2026-06-21.md](docs/mainnet/COORD_REWARDS_COMMITMENT_2026-06-21.md) |
+
+**Active set:** launched with 7 validators (5 coord + 2 external: NodeSync, UTSA). Now growing daily via the open external onboarding queue.
+
+**Active governance:** Proposal #1 (enable NXRL staking yield via mint module, 5%-12% floating inflation) is in voting until **2026-06-26 15:14 UTC**. Once executed, validators and delegators begin earning continuous staking rewards.
 
 **Slashing is live from block 1.** Downtime >50% over 10,000 blocks → 600 s jail + 0.01% slash. Double-sign → 5% slash + permanent tombstone. Never run two nodes with the same `priv_validator_key.json`.
 
-**Standard faucet grant for new validators:** 500 NXRL self-bond + 100 NXRL gas = **600 NXRL total**, drawn from the 150M NXRL `ecosystem_grants` bucket. Request format and full step-by-step are in the onboarding runbook above.
+**Standard faucet grant for new validators:** 500 NXRL self-bond + 100 NXRL gas = **600 NXRL total**, drawn from the 150M NXRL `ecosystem_grants` bucket. Request format and full step-by-step are in the onboarding runbook above. Critical: count the zeros on `--amount=500000000unxrl` — multiple validators have typo'd two zeros short and ended up with 5 NXRL self-bond instead of 500.
 
 ### Testnet — `nexarail-testnet-1` — RETIRED 2026-06-20
 
