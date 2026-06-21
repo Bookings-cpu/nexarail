@@ -152,9 +152,14 @@ Bradley sends the grant once approved.
 
 After funds arrive:
 
+> ⚠ **STOP — DOUBLE-CHECK YOUR `--amount` BEFORE SIGNING.**
+> The amount is in **unxrl** (micro-NXRL), not NXRL.
+> `1 NXRL = 1,000,000 unxrl`, so a 500 NXRL self-bond is **`500000000unxrl`** — that is **EIGHT** zeros after the `5`, not six.
+> Several validators have accidentally typed `5000000unxrl` (= 5 NXRL) and ended up with ~1/100 their intended voting power. Count the zeros twice.
+
 ```bash
 nexaraild tx staking create-validator \
-  --amount=500000000unxrl \
+  --amount=500000000unxrl \                  # 500,000,000 unxrl = 500 NXRL  (count the zeros)
   --pubkey=$(nexaraild tendermint show-validator) \
   --moniker="<your moniker>" \
   --identity="<keybase 16-char id, optional>" \
@@ -173,7 +178,25 @@ nexaraild tx staking create-validator \
   --yes
 ```
 
-The `--amount` is your self-bond in **unxrl** (here: 500 NXRL).
+The `--amount` is your self-bond in **unxrl**: `500000000unxrl` = 500 NXRL.
+
+#### If you got the amount wrong
+
+If your create-validator landed but with a typoed self-bond (for example 5 NXRL
+instead of 500), don't redo create-validator. Just top up with a `delegate` tx
+from the same operator wallet:
+
+```bash
+nexaraild tx staking delegate \
+  <your-valoper-address> \
+  495000000unxrl \                           # 495 NXRL — adjust to (target - current_self_bond) NXRL × 1,000,000
+  --from=<your-operator-key-name> \
+  --chain-id=nexarail-mainnet-1 \
+  --gas=auto --gas-adjustment=1.4 --gas-prices=0.025unxrl \
+  --yes
+```
+
+Your voting power updates in the next block. No re-registration needed.
 
 ### 9. Verify you're in the active set
 
