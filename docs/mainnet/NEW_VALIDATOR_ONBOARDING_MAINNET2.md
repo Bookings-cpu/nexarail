@@ -53,8 +53,25 @@ Do not run two nodes with the same consensus key. Ever.
 
 ### 1. Install
 
+⚠ **Pick the binary matching your server's architecture.** Running the wrong one gives `cannot execute binary file: Exec format error`. Check first:
+
+```bash
+uname -m
+# x86_64  -> use nexaraild-linux-amd64
+# aarch64 -> use nexaraild-linux-arm64  (common on Oracle Always Free, AWS Graviton, Raspberry Pi)
+```
+
+amd64:
 ```bash
 curl -L -o nexaraild https://github.com/Bookings-cpu/nexarail/releases/download/mainnet-genesis-nexarail-mainnet-2/nexaraild-linux-amd64
+chmod +x nexaraild
+sudo mv nexaraild /usr/local/bin/
+nexaraild version
+```
+
+arm64:
+```bash
+curl -L -o nexaraild https://github.com/Bookings-cpu/nexarail/releases/download/mainnet-genesis-nexarail-mainnet-2/nexaraild-linux-arm64
 chmod +x nexaraild
 sudo mv nexaraild /usr/local/bin/
 nexaraild version
