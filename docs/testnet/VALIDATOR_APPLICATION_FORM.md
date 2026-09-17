@@ -12,52 +12,52 @@ Complete this form to apply as a validator on the NexaRail controlled testnet.
 
 | Field | Your Response |
 |---|---|
-| Operator Name | |
-| Organisation (if any) | |
-| Country / Jurisdiction | |
-| Contact Email | |
-| Discord Handle | |
-| Telegram Handle | |
-| GitHub Handle | |
-| Website (optional) | |
+| Operator Name | NODERS |
+| Organisation (if any) | NODERS LLC |
+| Country / Jurisdiction | Caymans |
+| Contact Email | office@noders.team |
+| Discord Handle | noders |
+| Telegram Handle | @septima_noders |
+| GitHub Handle | noders-team |
+| Website (optional) | https://noders.team/ |
 
 ## Validator Information
 
 | Field | Your Response |
 |---|---|
-| Validator Moniker | |
-| Intended Commission Rate | % (0.00 — 0.20) |
-| Intended Max Commission Rate | % (0.00 — 0.20) |
-| Intended Max Change Rate | % (0.00 — 0.10) |
-| Self-Delegation Amount | unxrl (min: 500,000,000) |
+| Validator Moniker | [NODERS] |
+| Intended Commission Rate | 0.1 |
+| Intended Max Commission Rate | 0.1 |
+| Intended Max Change Rate | 0.01 |
+| Self-Delegation Amount | 500,000,000 |
 
 ## Infrastructure
 
 | Field | Your Response |
 |---|---|
-| Hosting Provider | |
-| Operating System | (must be Linux) |
-| CPU Cores | |
-| RAM (GB) | |
-| Disk Size & Type | |
-| Network Speed | |
-| Static IP Available? | Yes / No |
-| Geographic Region | |
-| Redundant Power? | Yes / No |
-| Redundant Network? | Yes / No |
-| Monitoring Setup | (describe) |
-| Backup / Snapshot Strategy | (describe) |
+| Hosting Provider | Vultr |
+| Operating System | Ubuntu 24.04 |
+| CPU Cores | 16 |
+| RAM (GB) | 128 |
+| Disk Size & Type | 4tb nvme |
+| Network Speed | 1Gbps |
+| Static IP Available? | Yes |
+| Geographic Region | Africa/Asia/US/EU |
+| Redundant Power? | Yes |
+| Redundant Network? | Yes |
+| Monitoring Setup | Prometheus\Grapaha stack, Alerta, Multiple notification channels, 24\7 devops on-call |
+| Backup / Snapshot Strategy | Keys backuped securelly with BitWarden / Snapshots every 12hrs |
 
 ## Experience
 
 | Field | Your Response |
 |---|---|
-| Years Running Validators | |
-| Chains Previously Validated | |
-| Cosmos SDK Experience? | Yes / No |
-| Tendermint/CometBFT Experience? | Yes / No |
-| Key Management Practice | (HSM / Ledger / other) |
-| Incident Response Experience | (describe) |
+| Years Running Validators | 5 |
+| Chains Previously Validated | Solana,Sui,Monad,Story,Canton,Berachain,Polygon ,IOTA,Starknet,Celestia,Nillion,Stader,IKA,Gnosis,Fuel,Autonity,SSV,Obol,Namada,Avail,Dymension,Seda,Supra,Zetachain,Haqq,Realio,AtomOne,NYM,Aura,Aura,Stratos,HumansAI,Uptick,Stake,Jackal |
+| Cosmos SDK Experience? | Yes |
+| Tendermint/CometBFT Experience? | Yes |
+| Key Management Practice | HSM/Horcrux |
+| Incident Response Experience | We have various expertise on all levels of chain functionallity, including halts, launches, updates etc. |
 
 ## Commitments
 
@@ -65,16 +65,16 @@ Please confirm each statement with your initials or a check:
 
 | # | Statement | Confirmed |
 |---|---|---|
-| 1 | I understand this is a TESTNET only. No mainnet is live. | ☐ |
-| 2 | I understand testnet tokens have ZERO monetary value and cannot be sold or exchanged. | ☐ |
-| 3 | I understand this is NOT a token sale, investment, or financial opportunity. | ☐ |
-| 4 | I will run my validator on a Linux host (not macOS Docker Desktop). | ☐ |
-| 5 | I will maintain reasonable uptime and respond to coordinator communications. | ☐ |
-| 6 | I understand testnet state may be wiped or reset at any time. | ☐ |
-| 7 | I will report security issues through the designated reporting process. | ☐ |
-| 8 | I will not make public claims about NXRL having monetary value or being an investment. | ☐ |
-| 9 | I agree to the NexaRail testnet code of conduct. | ☐ |
-| 10 | I understand my validator can be removed from the active set via governance. | ☐ |
+| 1 | I understand this is a TESTNET only. No mainnet is live. | [v] |
+| 2 | I understand testnet tokens have ZERO monetary value and cannot be sold or exchanged. | [v] |
+| 3 | I understand this is NOT a token sale, investment, or financial opportunity. | [v] |
+| 4 | I will run my validator on a Linux host (not macOS Docker Desktop). | [v] |
+| 5 | I will maintain reasonable uptime and respond to coordinator communications. | [v] |
+| 6 | I understand testnet state may be wiped or reset at any time. | [v] |
+| 7 | I will report security issues through the designated reporting process. | [v] |
+| 8 | I will not make public claims about NXRL having monetary value or being an investment. | [v] |
+| 9 | I agree to the NexaRail testnet code of conduct. | [v] |
+| 10 | I understand my validator can be removed from the active set via governance. | [v] |
 
 ## Public Key Submission
 
