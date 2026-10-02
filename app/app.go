@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
+	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/server/api"
@@ -514,8 +515,14 @@ func (app *NexaRailApp) SimulationManager() *module.SimulationManager { return a
 
 // servertypes.Application interface
 func (app *NexaRailApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
+	clientCtx := apiSvr.ClientCtx
 	app.RegisterRuntimeReadbackRoutes(apiSvr.GRPCGatewayRouter)
-	ModuleBasics.RegisterGRPCGatewayRoutes(apiSvr.ClientCtx, apiSvr.GRPCGatewayRouter)
+	// Standard SDK gateway routes: /cosmos/tx/v1beta1/*, /cosmos/base/tendermint/v1beta1/*,
+	// /cosmos/base/node/v1beta1/*. Explorers, wallets and the chain-registry CI depend on these.
+	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 }
 
 func (app *NexaRailApp) RegisterRuntimeReadbackRoutes(mux *runtime.ServeMux) {
@@ -739,7 +746,7 @@ func (app *NexaRailApp) RegisterTxService(clientCtx client.Context) {
 }
 
 func (app *NexaRailApp) RegisterTendermintService(clientCtx client.Context) {
-	// handled by tendermint service
+	tmservice.RegisterTendermintService(clientCtx, app.BaseApp.GRPCQueryRouter(), app.interfaceRegistry, app.Query)
 }
 
 func (app *NexaRailApp) RegisterNodeService(clientCtx client.Context) {
