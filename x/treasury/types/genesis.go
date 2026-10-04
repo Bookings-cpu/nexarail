@@ -41,6 +41,10 @@ func (gs GenesisState) Validate() error {
 			return err
 		}
 	}
+	budgetIDs := make(map[string]bool, len(gs.Budgets))
+	for _, b := range gs.Budgets {
+		budgetIDs[b.BudgetId] = true
+	}
 	seen = make(map[string]bool)
 	for i, g := range gs.Grants {
 		if seen[g.GrantId] {
@@ -50,6 +54,18 @@ func (gs GenesisState) Validate() error {
 		if err := g.ValidateWithParams(gs.Params); err != nil {
 			return err
 		}
+		// Referential integrity: a grant's BudgetId must name a real budget in
+		// this same genesis — without this, a grant can load pointing at a
+		// nonexistent budget, which previously panicked the first time any
+		// keeper function discarded GetBudget's "found" bool and dereferenced
+		// a zero-value Budget with nil-Int coin fields.
+		if g.BudgetId != "" && !budgetIDs[g.BudgetId] {
+			return fmt.Errorf("grant %s references nonexistent budget %s", g.GrantId, g.BudgetId)
+		}
+	}
+	grantIDs := make(map[string]bool, len(gs.Grants))
+	for _, g := range gs.Grants {
+		grantIDs[g.GrantId] = true
 	}
 	seen = make(map[string]bool)
 	for i, s := range gs.SpendRequests {
@@ -59,6 +75,12 @@ func (gs GenesisState) Validate() error {
 		seen[s.SpendId] = true
 		if err := s.ValidateWithParams(gs.Params); err != nil {
 			return err
+		}
+		if s.BudgetId != "" && !budgetIDs[s.BudgetId] {
+			return fmt.Errorf("spend %s references nonexistent budget %s", s.SpendId, s.BudgetId)
+		}
+		if s.GrantId != "" && !grantIDs[s.GrantId] {
+			return fmt.Errorf("spend %s references nonexistent grant %s", s.SpendId, s.GrantId)
 		}
 	}
 	return nil

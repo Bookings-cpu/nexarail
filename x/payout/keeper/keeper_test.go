@@ -92,9 +92,9 @@ func msgCreate(id string) *types.MsgCreatePayout {
 
 func TestCreatePayout(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	require.NoError(t, k.CreatePayout(ctx, msgCreate("p1")))
-	require.True(t, k.HasPayout(ctx, "p1"))
-	p, _ := k.GetPayout(ctx, "p1")
+	require.NoError(t, k.CreatePayout(ctx, msgCreate("pay1")))
+	require.True(t, k.HasPayout(ctx, "pay1"))
+	p, _ := k.GetPayout(ctx, "pay1")
 	require.Equal(t, int32(types.PayoutCreated), p.Status) // approval_required=true
 }
 
@@ -108,8 +108,8 @@ func TestCreatePayoutDisabled(t *testing.T) {
 
 func TestCreatePayoutDuplicate(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreatePayout(ctx, msgCreate("p3"))
-	require.ErrorIs(t, k.CreatePayout(ctx, msgCreate("p3")), types.ErrPayoutExists)
+	k.CreatePayout(ctx, msgCreate("pay3"))
+	require.ErrorIs(t, k.CreatePayout(ctx, msgCreate("pay3")), types.ErrPayoutExists)
 }
 
 func TestCreatePayoutMerchantNotFound(t *testing.T) {
@@ -205,21 +205,21 @@ func TestFailUnauth(t *testing.T) {
 
 func TestQueries(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreatePayout(ctx, msgCreate("q1"))
-	k.CreatePayout(ctx, msgCreate("q2"))
+	k.CreatePayout(ctx, msgCreate("qry1"))
+	k.CreatePayout(ctx, msgCreate("qry2"))
 	require.Len(t, k.GetAllPayouts(ctx), 2)
 	require.Len(t, k.GetPayoutsByMerchant(ctx, "m"), 2)
 	require.Len(t, k.GetPayoutsByRecipient(ctx, ra().String()), 2)
 	require.Len(t, k.GetPayoutsByInitiator(ctx, ba().String()), 2)
 	_, f := k.GetPayout(ctx, "zzz")
 	require.False(t, f)
-	require.True(t, k.HasPayout(ctx, "q1"))
+	require.True(t, k.HasPayout(ctx, "qry1"))
 }
 
 func TestGenesis(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreatePayout(ctx, msgCreate("g1"))
-	k.CreatePayout(ctx, msgCreate("g2"))
+	k.CreatePayout(ctx, msgCreate("gen1"))
+	k.CreatePayout(ctx, msgCreate("gen2"))
 	require.Len(t, k.GetAllPayouts(ctx), 2)
 }
 

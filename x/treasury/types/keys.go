@@ -1,11 +1,14 @@
 package types
 
+import "github.com/nexarail/chain/x/common"
+
 const (
 	ModuleName = "treasury"
 	StoreKey   = ModuleName
 	RouterKey  = ModuleName
 
-	TreasuryModuleAccount = "nexarail_treasury"
+	// Aliases x/common's canonical constant — see x/common/accounts.go.
+	TreasuryModuleAccount = common.TreasuryModuleAccount
 )
 
 var (

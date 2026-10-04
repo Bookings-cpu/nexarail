@@ -65,7 +65,30 @@ type AppModule struct {
 func NewAppModule(k keeper.Keeper) AppModule {
 	return AppModule{AppModuleBasic: AppModuleBasic{}, keeper: k}
 }
-func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
+	RegisterInvariants(ir, am.keeper)
+}
+
+// RegisterInvariants registers the escrow module invariants. This was
+// previously a no-op (`func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}`),
+// so ValidateCustodyInvariant existed and was correct but never actually ran —
+// the crisis module's periodic/manual invariant checks had nothing to check.
+func RegisterInvariants(ir sdk.InvariantRegistry, k keeper.Keeper) {
+	ir.RegisterRoute(types.ModuleName, "custody", CustodyInvariant(k))
+}
+
+// CustodyInvariant checks that no terminal escrow still shows funds in custody.
+func CustodyInvariant(k keeper.Keeper) sdk.Invariant {
+	return func(ctx sdk.Context) (string, bool) {
+		err := k.ValidateCustodyInvariant(ctx)
+		broken := err != nil
+		msg := "escrow custody invariant OK"
+		if broken {
+			msg = err.Error()
+		}
+		return sdk.FormatInvariant(types.ModuleName, "custody", msg), broken
+	}
+}
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	keeper.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
@@ -76,6 +99,14 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 	var gs types.GenesisState
 	if err := json.Unmarshal(data, &gs); err != nil {
 		panic(fmt.Errorf("escrow genesis: %w", err))
+	}
+	// Previously only validated by the standalone `validate-genesis` CLI path
+	// (AppModuleBasic.ValidateGenesis), never by InitGenesis itself — so a
+	// hand-edited or migration-produced genesis could load unvalidated state,
+	// including an escrow with a malformed address that only panicked later
+	// the first time a release/refund/dispute tried to pay it out.
+	if err := gs.Validate(); err != nil {
+		panic(fmt.Errorf("escrow genesis invalid: %w", err))
 	}
 	if err := am.keeper.SetParams(ctx, gs.Params); err != nil {
 		panic(fmt.Errorf("escrow params: %w", err))

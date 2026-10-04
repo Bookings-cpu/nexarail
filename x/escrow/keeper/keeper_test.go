@@ -155,15 +155,16 @@ func TestCreateBuyerEqualsSeller(t *testing.T) {
 
 func TestCreateBelowMinAmount(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	msg := types.NewMsgCreateEscrow(ba().String(), "e5", sa().String(), "m", "unxrl", cn(0), "", "", 0)
+	msg := types.NewMsgCreateEscrow(ba().String(), "e05", sa().String(), "m", "unxrl", cn(0), "", "", 0)
 	_, err := k.CreateEscrow(ctx, msg)
 	require.ErrorIs(t, err, types.ErrAmountNotPositive)
 }
 
 func TestCreateDefaultExpiry(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	msg := types.NewMsgCreateEscrow(ba().String(), "e6", sa().String(), "m", "unxrl", cn(100), "", "", 0)
-	e, _ := k.CreateEscrow(ctx, msg)
+	msg := types.NewMsgCreateEscrow(ba().String(), "e06", sa().String(), "m", "unxrl", cn(100), "", "", 0)
+	e, err := k.CreateEscrow(ctx, msg)
+	require.NoError(t, err)
 	require.Greater(t, e.ExpiresAt, e.CreatedAt)
 }
 
@@ -183,11 +184,11 @@ func TestQueryParams(t *testing.T) {
 }
 func TestQueryEscrow(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	msg := types.NewMsgCreateEscrow(ba().String(), "q1", sa().String(), "m", "unxrl", cn(100), "", "", 0)
+	msg := types.NewMsgCreateEscrow(ba().String(), "qe1", sa().String(), "m", "unxrl", cn(100), "", "", 0)
 	k.CreateEscrow(ctx, msg)
-	e, found := k.GetEscrow(ctx, "q1")
+	e, found := k.GetEscrow(ctx, "qe1")
 	require.True(t, found)
-	require.Equal(t, "q1", e.EscrowId)
+	require.Equal(t, "qe1", e.EscrowId)
 }
 func TestQueryNotFound(t *testing.T) {
 	k, ctx := setupKeeper(t)
@@ -197,40 +198,40 @@ func TestQueryNotFound(t *testing.T) {
 func TestQueryAll(t *testing.T) {
 	k, ctx := setupKeeper(t)
 	for i := 0; i < 3; i++ {
-		k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), fmt.Sprintf("a%d", i), sa().String(), "m", "unxrl", cn(100), "", "", 0))
+		k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), fmt.Sprintf("qa%d", i), sa().String(), "m", "unxrl", cn(100), "", "", 0))
 	}
 	require.Len(t, k.GetAllEscrows(ctx), 3)
 }
 func TestQueryExists(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "ex", sa().String(), "m", "unxrl", cn(100), "", "", 0))
-	require.True(t, k.HasEscrow(ctx, "ex"))
+	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "exq", sa().String(), "m", "unxrl", cn(100), "", "", 0))
+	require.True(t, k.HasEscrow(ctx, "exq"))
 	require.False(t, k.HasEscrow(ctx, "no"))
 }
 
 // --- Lifecycle ---
 func TestReleaseByBuyer(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "rb", sa().String(), "m", "unxrl", cn(100), "", "", 0))
-	require.NoError(t, k.ReleaseEscrow(ctx, types.NewMsgReleaseEscrow(ba().String(), "rb", "", "")))
-	e, _ := k.GetEscrow(ctx, "rb")
+	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "rb1", sa().String(), "m", "unxrl", cn(100), "", "", 0))
+	require.NoError(t, k.ReleaseEscrow(ctx, types.NewMsgReleaseEscrow(ba().String(), "rb1", "", "")))
+	e, _ := k.GetEscrow(ctx, "rb1")
 	require.Equal(t, int32(types.EscrowReleased), e.Status)
 }
 func TestReleaseByAuthority(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "ra", sa().String(), "m", "unxrl", cn(100), "", "", 0))
-	require.NoError(t, k.ReleaseEscrow(ctx, types.NewMsgReleaseEscrow(k.GetAuthority(), "ra", "", "")))
+	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "ra1", sa().String(), "m", "unxrl", cn(100), "", "", 0))
+	require.NoError(t, k.ReleaseEscrow(ctx, types.NewMsgReleaseEscrow(k.GetAuthority(), "ra1", "", "")))
 }
 func TestReleaseByStranger(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "rs", sa().String(), "m", "unxrl", cn(100), "", "", 0))
-	require.ErrorIs(t, k.ReleaseEscrow(ctx, types.NewMsgReleaseEscrow(st().String(), "rs", "", "")), types.ErrUnauthorized)
+	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "rs1", sa().String(), "m", "unxrl", cn(100), "", "", 0))
+	require.ErrorIs(t, k.ReleaseEscrow(ctx, types.NewMsgReleaseEscrow(st().String(), "rs1", "", "")), types.ErrUnauthorized)
 }
 func TestRefundBySeller(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "fs", sa().String(), "m", "unxrl", cn(100), "", "", 0))
-	require.NoError(t, k.RefundEscrow(ctx, types.NewMsgRefundEscrow(sa().String(), "fs", "", "")))
-	e, _ := k.GetEscrow(ctx, "fs")
+	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "fs1", sa().String(), "m", "unxrl", cn(100), "", "", 0))
+	require.NoError(t, k.RefundEscrow(ctx, types.NewMsgRefundEscrow(sa().String(), "fs1", "", "")))
+	e, _ := k.GetEscrow(ctx, "fs1")
 	require.Equal(t, int32(types.EscrowRefunded), e.Status)
 }
 func TestRefundByStranger(t *testing.T) {
@@ -240,15 +241,15 @@ func TestRefundByStranger(t *testing.T) {
 }
 func TestDisputeByBuyer(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "db", sa().String(), "m", "unxrl", cn(100), "", "", 0))
-	require.NoError(t, k.OpenDispute(ctx, types.NewMsgOpenDispute(ba().String(), "db", "reason")))
-	e, _ := k.GetEscrow(ctx, "db")
+	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "db1", sa().String(), "m", "unxrl", cn(100), "", "", 0))
+	require.NoError(t, k.OpenDispute(ctx, types.NewMsgOpenDispute(ba().String(), "db1", "reason")))
+	e, _ := k.GetEscrow(ctx, "db1")
 	require.Equal(t, int32(types.EscrowDisputed), e.Status)
 }
 func TestDisputeBySeller(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "ds", sa().String(), "m", "unxrl", cn(100), "", "", 0))
-	require.NoError(t, k.OpenDispute(ctx, types.NewMsgOpenDispute(sa().String(), "ds", "reason")))
+	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "ds1", sa().String(), "m", "unxrl", cn(100), "", "", 0))
+	require.NoError(t, k.OpenDispute(ctx, types.NewMsgOpenDispute(sa().String(), "ds1", "reason")))
 }
 func TestDisputeByStranger(t *testing.T) {
 	k, ctx := setupKeeper(t)
@@ -287,9 +288,9 @@ func TestResolveUnauth(t *testing.T) {
 }
 func TestCancelByBuyer(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "cb", sa().String(), "m", "unxrl", cn(100), "", "", 0))
-	require.NoError(t, k.CancelEscrow(ctx, types.NewMsgCancelEscrow(ba().String(), "cb", "")))
-	e, _ := k.GetEscrow(ctx, "cb")
+	k.CreateEscrow(ctx, types.NewMsgCreateEscrow(ba().String(), "cb1", sa().String(), "m", "unxrl", cn(100), "", "", 0))
+	require.NoError(t, k.CancelEscrow(ctx, types.NewMsgCancelEscrow(ba().String(), "cb1", "")))
+	e, _ := k.GetEscrow(ctx, "cb1")
 	require.Equal(t, int32(types.EscrowCancelled), e.Status)
 }
 func TestCancelByStranger(t *testing.T) {
@@ -395,10 +396,12 @@ func TestLiveCancelEscrow(t *testing.T) {
 	e, _ := k.CreateEscrow(ctx, msg)
 	require.True(t, e.FundsCustodied)
 
-	require.NoError(t, k.CancelEscrow(ctx, types.NewMsgCancelEscrow(ba().String(), "live4", "")))
+	// A funded/live escrow must not be unwound by a unilateral buyer cancel —
+	// only release, refund (seller-initiated), or dispute may move it once funded.
+	require.ErrorIs(t, k.CancelEscrow(ctx, types.NewMsgCancelEscrow(ba().String(), "live4", "")), types.ErrInvalidTransition)
 	updated, _ := k.GetEscrow(ctx, "live4")
-	require.Equal(t, int32(types.EscrowCancelled), updated.Status)
-	require.False(t, updated.FundsCustodied)
+	require.Equal(t, int32(types.EscrowFunded), updated.Status)
+	require.True(t, updated.FundsCustodied)
 }
 
 func TestLiveDisputeBuyerWins(t *testing.T) {

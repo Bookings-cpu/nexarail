@@ -62,7 +62,28 @@ type AppModule struct {
 }
 
 func NewAppModule(k keeper.Keeper) AppModule                    { return AppModule{AppModuleBasic{}, k} }
-func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
+	RegisterInvariants(ir, am.keeper)
+}
+
+// RegisterInvariants registers the payout module invariants. Previously a
+// no-op — ValidatePayoutFundsInvariant existed and was correct but never ran.
+func RegisterInvariants(ir sdk.InvariantRegistry, k keeper.Keeper) {
+	ir.RegisterRoute(types.ModuleName, "funds", FundsInvariant(k))
+}
+
+// FundsInvariant checks FundsPaid/status consistency across all payouts.
+func FundsInvariant(k keeper.Keeper) sdk.Invariant {
+	return func(ctx sdk.Context) (string, bool) {
+		err := k.ValidatePayoutFundsInvariant(ctx)
+		broken := err != nil
+		msg := "payout funds invariant OK"
+		if broken {
+			msg = err.Error()
+		}
+		return sdk.FormatInvariant(types.ModuleName, "funds", msg), broken
+	}
+}
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	keeper.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 	keeper.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryServerImpl(am.keeper))
@@ -71,6 +92,12 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 	var gs types.GenesisState
 	if err := json.Unmarshal(data, &gs); err != nil {
 		panic(err)
+	}
+	// Previously only validated by the standalone `validate-genesis` CLI path,
+	// never by InitGenesis itself — a hand-edited or migration-produced
+	// genesis could load unvalidated payout/batch records.
+	if err := gs.Validate(); err != nil {
+		panic(fmt.Errorf("payout genesis invalid: %w", err))
 	}
 	if err := am.keeper.SetParams(ctx, gs.Params); err != nil {
 		panic(err)

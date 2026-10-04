@@ -203,14 +203,6 @@ func (k Keeper) CreateEscrow(ctx sdk.Context, msg *types.MsgCreateEscrow) (*type
 		return nil, fmt.Errorf("merchant %s status=%d: %w", merchant.Owner, merchant.Status, types.ErrMerchantNotActive)
 	}
 
-	// Validate amount
-	if msg.Amount.IsZero() || msg.Amount.IsNegative() {
-		return nil, fmt.Errorf("%w", types.ErrAmountNotPositive)
-	}
-	if msg.AssetDenom == params.MinEscrowAmount.Denom && msg.Amount.IsLT(params.MinEscrowAmount) {
-		return nil, fmt.Errorf("amount %s < min %s: %w", msg.Amount, params.MinEscrowAmount, types.ErrAmountNotPositive)
-	}
-
 	// Expiry
 	now := ctx.BlockTime().Unix()
 	expires := msg.ExpiresAt
@@ -222,6 +214,16 @@ func (k Keeper) CreateEscrow(ctx sdk.Context, msg *types.MsgCreateEscrow) (*type
 		msg.PaymentReference, msg.Memo, now, expires)
 	e.Status = int32(types.EscrowCreated)
 	e.DisputeStatus = int32(types.DisputeNone)
+
+	// Full structural + amount validation, including the AssetDenom == Amount.Denom
+	// consistency check and the correctly-ordered minimum-amount check. This was
+	// previously only called from genesis import, not here — the inline checks
+	// that used to live in this function keyed the minimum-amount check on the
+	// wrong field (AssetDenom instead of Amount.Denom) and could panic on a
+	// denom-mismatched Amount, since sdk.Coin.IsLT panics across denoms.
+	if err := e.ValidateWithParams(params); err != nil {
+		return nil, err
+	}
 
 	// Live custody: transfer buyer → escrow module account
 	if params.LiveEnabled {
@@ -259,17 +261,18 @@ func (k Keeper) ReleaseEscrow(ctx sdk.Context, msg *types.MsgReleaseEscrow) erro
 		return fmt.Errorf("%w", types.ErrUnauthorized)
 	}
 
-	// Must be CREATED or FUNDED, not DISPUTED
+	// Must be CREATED or FUNDED — this already excludes EscrowDisputed (and every
+	// other status), so no separate disputed-status check is needed here.
 	if e.Status != int32(types.EscrowCreated) && e.Status != int32(types.EscrowFunded) {
 		return fmt.Errorf("status %s: %w", types.EscrowStatus(e.Status), types.ErrInvalidTransition)
-	}
-	if e.Status == int32(types.EscrowDisputed) {
-		return fmt.Errorf("disputed: %w", types.ErrInvalidTransition)
 	}
 
 	// Live custody: transfer escrow module → seller
 	if e.FundsCustodied {
-		seller, _ := sdk.AccAddressFromBech32(e.SellerAddress)
+		seller, err := sdk.AccAddressFromBech32(e.SellerAddress)
+		if err != nil {
+			return fmt.Errorf("stored seller_address %q unparseable: %w", e.SellerAddress, err)
+		}
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.EscrowModuleAccount, seller, sdk.NewCoins(e.Amount)); err != nil {
 			return fmt.Errorf("live release failed: %w", err)
 		}
@@ -313,7 +316,10 @@ func (k Keeper) RefundEscrow(ctx sdk.Context, msg *types.MsgRefundEscrow) error 
 
 	// Live custody: transfer escrow module → buyer
 	if e.FundsCustodied {
-		buyer, _ := sdk.AccAddressFromBech32(e.BuyerAddress)
+		buyer, err := sdk.AccAddressFromBech32(e.BuyerAddress)
+		if err != nil {
+			return fmt.Errorf("stored buyer_address %q unparseable: %w", e.BuyerAddress, err)
+		}
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.EscrowModuleAccount, buyer, sdk.NewCoins(e.Amount)); err != nil {
 			return fmt.Errorf("live refund failed: %w", err)
 		}
@@ -394,8 +400,14 @@ func (k Keeper) ResolveDispute(ctx sdk.Context, msg *types.MsgResolveDispute) er
 
 	// Live custody: resolve based on dispute outcome
 	if e.FundsCustodied {
-		buyer, _ := sdk.AccAddressFromBech32(e.BuyerAddress)
-		seller, _ := sdk.AccAddressFromBech32(e.SellerAddress)
+		buyer, err := sdk.AccAddressFromBech32(e.BuyerAddress)
+		if err != nil {
+			return fmt.Errorf("stored buyer_address %q unparseable: %w", e.BuyerAddress, err)
+		}
+		seller, err := sdk.AccAddressFromBech32(e.SellerAddress)
+		if err != nil {
+			return fmt.Errorf("stored seller_address %q unparseable: %w", e.SellerAddress, err)
+		}
 		switch ds {
 		case int32(types.DisputeBuyerWins):
 			if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.EscrowModuleAccount, buyer, sdk.NewCoins(e.Amount)); err != nil {
@@ -456,14 +468,31 @@ func (k Keeper) CancelEscrow(ctx sdk.Context, msg *types.MsgCancelEscrow) error 
 		return fmt.Errorf("%w", types.ErrUnauthorized)
 	}
 
-	if e.Status != int32(types.EscrowCreated) && e.Status != int32(types.EscrowFunded) {
+	// The buyer may only cancel before the escrow is funded — this is the
+	// "cancel my order before paying" path. Once funds are in custody, the
+	// module already provides the correct exit paths: ReleaseEscrow (buyer
+	// confirms, pays seller), RefundEscrow (seller voluntarily returns funds
+	// to buyer), or OpenDispute/ResolveDispute (arbitrated by governance).
+	// Allowing unilateral buyer cancellation on a FUNDED escrow bypassed all
+	// of that and let the buyer reclaim 100% of custodied funds at any time
+	// with no seller recourse, which defeats the purpose of the module.
+	// Authority (governance) retains the ability to cancel in either status
+	// for legitimate administrative cleanup.
+	if msg.Signer == e.BuyerAddress && msg.Signer != k.authority {
+		if e.Status != int32(types.EscrowCreated) {
+			return fmt.Errorf("escrow is funded — use release, refund, or dispute instead of cancel: %w", types.ErrInvalidTransition)
+		}
+	} else if e.Status != int32(types.EscrowCreated) && e.Status != int32(types.EscrowFunded) {
 		return fmt.Errorf("only CREATED or FUNDED escrows can be cancelled, got %s: %w",
 			types.EscrowStatus(e.Status), types.ErrInvalidTransition)
 	}
 
 	// Live custody: transfer escrow module → buyer
 	if e.FundsCustodied {
-		buyer, _ := sdk.AccAddressFromBech32(e.BuyerAddress)
+		buyer, err := sdk.AccAddressFromBech32(e.BuyerAddress)
+		if err != nil {
+			return fmt.Errorf("stored buyer_address %q unparseable: %w", e.BuyerAddress, err)
+		}
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.EscrowModuleAccount, buyer, sdk.NewCoins(e.Amount)); err != nil {
 			return fmt.Errorf("live cancel failed: %w", err)
 		}

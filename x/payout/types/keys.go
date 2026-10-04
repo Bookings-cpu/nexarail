@@ -1,15 +1,17 @@
 package types
 
+import "github.com/nexarail/chain/x/common"
+
 const (
 	ModuleName = "payout"
 	StoreKey   = ModuleName
 	RouterKey  = ModuleName
 
 	// TreasuryModuleAccount is the module account that funds live payouts in v1.
-	// MUST match app.NexaRailTreasuryModuleAccount and x/treasury
-	// TreasuryModuleAccount ("nexarail_treasury"). Defined locally to avoid a
-	// payout -> treasury module dependency.
-	TreasuryModuleAccount = "nexarail_treasury"
+	// Aliases x/common's canonical constant (see x/common/accounts.go) rather
+	// than redeclaring the literal, to avoid a payout -> treasury module
+	// dependency while still staying in sync with app.go's registration.
+	TreasuryModuleAccount = common.TreasuryModuleAccount
 )
 
 var (

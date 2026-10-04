@@ -86,9 +86,10 @@ type mockBankKeeper struct {
 	sendCalled         bool
 	sendToModuleCalled bool
 	burnCalled         bool
-	sendError          error
-	sendToModuleError  error
-	burnError          error
+	sendError            error
+	sendToModuleError    error
+	sendToModuleErrorFor string // if set, sendToModuleError only applies to this recipient module
+	burnError            error
 	lastFrom           sdk.AccAddress
 	lastTo             sdk.AccAddress
 	lastAmount         sdk.Coins
@@ -120,7 +121,7 @@ func (m *mockBankKeeper) SendCoinsFromAccountToModule(ctx sdk.Context, from sdk.
 	m.lastFrom = from
 	m.lastToModule = recipientModule
 	m.lastModuleAmount = amt
-	if m.sendToModuleError != nil {
+	if m.sendToModuleError != nil && (m.sendToModuleErrorFor == "" || m.sendToModuleErrorFor == recipientModule) {
 		return m.sendToModuleError
 	}
 	fromBal := m.balances[from.String()]
@@ -432,8 +433,11 @@ func TestLiveSettlementPayerBalanceDecreases(t *testing.T) {
 	require.NoError(t, err)
 	// fee = 100000*100/10000=1000; rebate tier2 1000bps => rebate 1000*1000/10000=100; netFee=900
 	// merchantNet = 100000-900 = 99100
+	// valShare = 900*6000/10000=540 (validator share is collected unconditionally
+	// whenever live, independent of treasury/burn routing flags)
+	// payer total debit = merchantNet + valShare = 99100 + 540 = 99640
 	payerBalAfter := bk.balances[payer.String()]
-	require.Equal(t, int64(1000000000-99100), payerBalAfter.AmountOf("unxrl").Int64())
+	require.Equal(t, int64(1000000000-99640), payerBalAfter.AmountOf("unxrl").Int64())
 }
 
 func TestLiveSettlementMerchantBalanceIncreases(t *testing.T) {
@@ -803,14 +807,15 @@ func TestTreasuryRoutingTrueLiveDisabledNoOp(t *testing.T) {
 func TestLiveEnabledWithoutTreasuryRouting(t *testing.T) {
 	k, ctx, bk := setupKeeper(t)
 	enableLive(t, k, ctx)
-	// TreasuryRoutingEnabled is still false
+	// TreasuryRoutingEnabled is still false — the validator share still gets
+	// collected unconditionally, but the treasury-specific transfer must not.
 	msg := types.NewMsgCreateSettlement(payerAddr().String(), activeMerchantAddr().String(),
 		sdk.NewInt64Coin("unxrl", 100000), "")
 	s, err := k.CreateSettlement(ctx, msg)
 	require.NoError(t, err)
 	require.True(t, s.FundsSettled)
 	require.True(t, bk.sendCalled)
-	require.False(t, bk.sendToModuleCalled, "treasury transfer must not happen")
+	require.Equal(t, int64(0), bk.moduleBalances["nexarail_treasury"].AmountOf("unxrl").Int64(), "treasury transfer must not happen")
 }
 
 func TestMerchantOnlyTreasuryBalanceUnchanged(t *testing.T) {
@@ -877,9 +882,9 @@ func TestTreasuryRoutingPayerTotalDeduction(t *testing.T) {
 		sdk.NewInt64Coin("unxrl", 100000), "")
 	_, err := k.CreateSettlement(ctx, msg)
 	require.NoError(t, err)
-	// merchantNet=99100, treasury=180, total=99280
+	// merchantNet=99100, valShare=540 (unconditional), treasury=180, total=99820
 	payerAfter := bk.balances[payer.String()].AmountOf("unxrl").Int64()
-	require.Equal(t, int64(1000000000-99280), payerAfter)
+	require.Equal(t, int64(1000000000-99820), payerAfter)
 }
 
 func TestTreasuryRoutingBurnShareMetadata(t *testing.T) {
@@ -976,6 +981,7 @@ func TestTreasuryRoutingTreasuryTransferFails(t *testing.T) {
 	k, ctx, bk := setupKeeper(t)
 	enableTreasuryRouting(t, k, ctx)
 	bk.sendToModuleError = fmt.Errorf("simulated treasury transfer failure")
+	bk.sendToModuleErrorFor = "nexarail_treasury"
 
 	msg := types.NewMsgCreateSettlement(payerAddr().String(), activeMerchantAddr().String(),
 		sdk.NewInt64Coin("unxrl", 100000), "")
@@ -1141,9 +1147,11 @@ func TestBurnRoutingPayerTotalDeduction(t *testing.T) {
 		sdk.NewInt64Coin("unxrl", 100000), "")
 	_, err := k.CreateSettlement(ctx, msg)
 	require.NoError(t, err)
-	// merchantNet=99100, treasury=180, burn=180, total=99460
+	// merchantNet=99100, valShare=540 (unconditional), treasury=180, burn=180
+	// total = 99100+540+180+180 = 100000 (= full settlement amount, as expected:
+	// merchantNet + netFee should always equal amount)
 	payerAfter := bk.balances[payer.String()].AmountOf("unxrl").Int64()
-	require.Equal(t, int64(1000000000-99460), payerAfter)
+	require.Equal(t, int64(1000000000-100000), payerAfter)
 }
 
 func TestBurnRoutingMerchantReceivesNet(t *testing.T) {

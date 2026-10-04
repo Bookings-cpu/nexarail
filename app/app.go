@@ -110,11 +110,14 @@ const (
 	AccountAddressPrefix = "nxr"
 	Name                 = "nexarail"
 
-	// Module account names for Phase 5B live fund infrastructure
+	// Module account names for Phase 5B live fund infrastructure.
+	// Treasury and Burner alias x/common's canonical constants — see
+	// x/common/accounts.go — since those two names are also referenced
+	// independently by x/treasury, x/payout, and x/settlement.
 	NexaRailEscrowModuleAccount    = "nexarail_escrow"
-	NexaRailTreasuryModuleAccount  = "nexarail_treasury"
+	NexaRailTreasuryModuleAccount  = common.TreasuryModuleAccount
 	NexaRailFeeRouterModuleAccount = "nexarail_fee_router"
-	NexaRailBurnerModuleAccount    = "nexarail_burner"
+	NexaRailBurnerModuleAccount    = common.BurnerModuleAccount
 )
 
 var DefaultNodeHome = filepath.Join(os.Getenv("HOME"), ".nexarail")

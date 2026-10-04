@@ -8,17 +8,18 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/nexarail/chain/x/common"
 	"github.com/nexarail/chain/x/settlement/types"
 )
 
 // TreasuryModuleAccount is the NexaRail protocol treasury module account name.
-// Must match the constant registered in app.go (NexaRailTreasuryModuleAccount).
-const TreasuryModuleAccount = "nexarail_treasury"
+// Aliases x/common's canonical constant — see x/common/accounts.go.
+const TreasuryModuleAccount = common.TreasuryModuleAccount
 
 // BurnerModuleAccount is the NexaRail burner module account name.
-// Must match the constant registered in app.go (NexaRailBurnerModuleAccount).
+// Aliases x/common's canonical constant — see x/common/accounts.go.
 // Requires authtypes.Burner permission.
-const BurnerModuleAccount = "nexarail_burner"
+const BurnerModuleAccount = common.BurnerModuleAccount
 
 // Keeper maintains the state for the settlement module.
 type Keeper struct {
@@ -212,6 +213,10 @@ func (k Keeper) CreateSettlement(ctx sdk.Context, msg *types.MsgCreateSettlement
 		return nil, fmt.Errorf("invalid merchant: %w", err)
 	}
 
+	if payerAddr.Equals(merchantAddr) {
+		return nil, fmt.Errorf("payer cannot settle against their own merchant account: %w", types.ErrInvalidMerchant)
+	}
+
 	merchant, found := k.merchantKeeper.GetMerchant(ctx, merchantAddr)
 	if !found {
 		return nil, fmt.Errorf("merchant %s not found: %w", msg.MerchantOwner, types.ErrInvalidMerchant)
@@ -223,21 +228,31 @@ func (k Keeper) CreateSettlement(ctx sdk.Context, msg *types.MsgCreateSettlement
 			merchant.Owner, merchant.Status, types.ErrMerchantNotActive)
 	}
 
-	// 6. Settlement address
+	// 6. Settlement address. Note: there is currently no separate merchant
+	// settlement/payout address distinct from the owner address — this was a
+	// dead no-op fallback to itself, not an actual alternate-address feature.
+	// If merchants need a distinct settlement address later, that needs its
+	// own field on the merchant record, not a fallback here.
 	settlementAddress := merchant.Owner
-	if settlementAddress == "" {
-		settlementAddress = merchant.Owner
-	}
 
 	// 7. Generate settlement ID
 	id := k.getNextSettlementID(ctx)
 
-	// 8. Fee calculation in basis points
+	// 8. Fee calculation in basis points.
+	// Rounds the fee up (ceiling), not down: with floor division any amount
+	// small enough that amount*feeRateBps < 10000 produced baseFee=0 — a
+	// structuring loophole letting a payer move funds through the settlement
+	// path fee-free by splitting into many sub-threshold settlements. Ceiling
+	// division guarantees a nonzero fee for any nonzero amount, and is a
+	// no-op whenever amount*feeRateBps already divides evenly (the common
+	// case), so it only changes behavior for amounts that were previously
+	// under-charged to zero.
 	amount := msg.Amount.Amount
 	feeRateBps := sdk.NewInt(int64(params.FeeRateBps))
 	bpsFactor := sdk.NewInt(10000)
 
-	baseFee := amount.Mul(feeRateBps).Quo(bpsFactor)
+	feeNumerator := amount.Mul(feeRateBps)
+	baseFee := feeNumerator.Add(bpsFactor).Sub(sdk.OneInt()).Quo(bpsFactor)
 
 	// 9. Apply merchant rebate tier
 	rebateBps := params.GetRebateBps(merchant.RebateTier)
@@ -299,6 +314,22 @@ func (k Keeper) CreateSettlement(ctx sdk.Context, msg *types.MsgCreateSettlement
 			return nil, fmt.Errorf("live settlement transfer failed: %w", err)
 		}
 
+		// Transfer validator share from payer to the fee collector module account.
+		// The settlement record unconditionally claims this share was collected
+		// (ValidatorShare field, set below regardless of routing flags), so unlike
+		// treasury/burn routing — which are optional protocol allocations gated by
+		// their own flags — this transfer is not optional: it's the base fee
+		// collection the record already asserts happened. Previously this was
+		// computed and recorded but never actually transferred anywhere, so the
+		// payer was silently under-debited by the validator's share of every fee.
+		if valShare.IsPositive() {
+			if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, payerAddr,
+				feeParams.FeeCollectorName,
+				sdk.NewCoins(sdk.NewCoin(denom, valShare))); err != nil {
+				return nil, fmt.Errorf("live settlement validator-share routing failed: %w", err)
+			}
+		}
+
 		// Transfer treasury share from payer to protocol treasury
 		if params.TreasuryRoutingEnabled && treasuryShare.IsPositive() {
 			if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, payerAddr,
@@ -309,9 +340,11 @@ func (k Keeper) CreateSettlement(ctx sdk.Context, msg *types.MsgCreateSettlement
 			treasuryRouted = true
 		}
 
-		// Burn burn share via nexarail_burner module account
-		// Requires BurnRoutingEnabled=true (and LiveEnabled + TreasuryRoutingEnabled)
-		if params.BurnRoutingEnabled && burnShare.IsPositive() {
+		// Burn burn share via nexarail_burner module account.
+		// Requires BurnRoutingEnabled=true AND TreasuryRoutingEnabled=true (and
+		// LiveEnabled) — matching the documented contract above, which the
+		// original flag check here did not actually enforce.
+		if params.BurnRoutingEnabled && params.TreasuryRoutingEnabled && burnShare.IsPositive() {
 			// Step 1: Send burn share from payer to burner module account
 			if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, payerAddr,
 				BurnerModuleAccount,

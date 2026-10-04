@@ -33,7 +33,12 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 		return types.DefaultParams()
 	}
 	var p types.Params
-	json.Unmarshal(bz, &p)
+	if err := json.Unmarshal(bz, &p); err != nil {
+		// Matches escrow/payout/settlement: fail loud on corrupt stored params
+		// rather than silently returning a half-populated Params whose nil-Int
+		// coin fields panic unhelpfully somewhere downstream instead.
+		panic(fmt.Errorf("treasury params: %w", err))
+	}
 	return p
 }
 func (k Keeper) SetParams(ctx sdk.Context, p types.Params) error {
@@ -386,10 +391,24 @@ func (k Keeper) UpdateGrantStatus(ctx sdk.Context, msg *types.MsgUpdateGrantStat
 	if g.Status == int32(types.GrantCancelled) && msg.Status != int32(types.GrantCancelled) {
 		return fmt.Errorf("cancelled grant: %w", types.ErrInvalidTransition)
 	}
+	wasAlreadyCancelled := g.Status == int32(types.GrantCancelled)
 	g.Status = msg.Status
 	g.UpdatedAt = ctx.BlockTime().Unix()
 	if msg.Status == int32(types.GrantCompleted) {
 		g.CompletedAt = g.UpdatedAt
+	}
+	// Cancelling releases the budget capacity CreateGrant reserved — otherwise
+	// a cancelled grant permanently consumes capacity it will never spend.
+	if msg.Status == int32(types.GrantCancelled) && !wasAlreadyCancelled && g.BudgetId != "" {
+		if b, found := k.GetBudget(ctx, g.BudgetId); found {
+			if b.AllocatedAmount.Amount.GTE(g.Amount.Amount) {
+				b.AllocatedAmount = b.AllocatedAmount.Sub(g.Amount)
+			} else {
+				b.AllocatedAmount = sdk.NewCoin(b.AllocatedAmount.Denom, sdk.ZeroInt())
+			}
+			b.UpdatedAt = g.UpdatedAt
+			k.SetBudget(ctx, b)
+		}
 	}
 	k.SetGrant(ctx, g)
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventUpdateGrant, sdk.NewAttribute(types.AttrGrantId, g.GrantId), sdk.NewAttribute(types.AttrStatus, fmt.Sprintf("%d", g.Status))))
@@ -440,17 +459,31 @@ func (k Keeper) ApproveSpendRequest(ctx sdk.Context, msg *types.MsgApproveSpendR
 	if s.Status != int32(types.SpendRequested) {
 		return fmt.Errorf("status: %w", types.ErrInvalidTransition)
 	}
+	var b types.Budget
 	if s.BudgetId != "" {
-		b, _ := k.GetBudget(ctx, s.BudgetId)
-		newTotal := b.AllocatedAmount.Add(s.Amount).Add(b.SpentAmount)
-		if newTotal.Amount.GT(b.TotalAmount.Amount) {
+		var found bool
+		b, found = k.GetBudget(ctx, s.BudgetId)
+		if !found {
+			return fmt.Errorf("budget %s: %w", s.BudgetId, types.ErrRecordNotFound)
+		}
+		newAlloc := b.AllocatedAmount.Add(s.Amount)
+		if newAlloc.Add(b.SpentAmount).Amount.GT(b.TotalAmount.Amount) {
 			return fmt.Errorf("%w", types.ErrBudgetCapacity)
 		}
+		// Reserve capacity now, not just check it — otherwise multiple approvals
+		// against the same budget can each pass this check independently and
+		// collectively overspend it (the reservation must be visible to the
+		// next approval, not just computed and discarded).
+		b.AllocatedAmount = newAlloc
 	}
 	now := ctx.BlockTime().Unix()
 	s.Status = int32(types.SpendApproved)
 	s.ApprovedAt = now
 	s.UpdatedAt = now
+	if s.BudgetId != "" {
+		b.UpdatedAt = now
+		k.SetBudget(ctx, b)
+	}
 	k.SetSpendRequest(ctx, s)
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventApproveSpend, sdk.NewAttribute(types.AttrSpendId, s.SpendId), sdk.NewAttribute(types.AttrStatus, fmt.Sprintf("%d", s.Status))))
 	return nil
@@ -517,9 +550,22 @@ func (k Keeper) MarkSpendExecuted(ctx sdk.Context, msg *types.MsgMarkSpendExecut
 	if msg.Memo != "" {
 		s.Memo = strings.TrimSpace(msg.Memo)
 	}
-	// Increment budget spent_amount
+	// Move the capacity reservation from "allocated" (reserved at approval) to
+	// "spent" (actually executed). Must not simply add to SpentAmount without
+	// releasing the matching AllocatedAmount reservation, or the budget would
+	// double-count this spend's capacity usage against future approvals.
 	if s.BudgetId != "" {
-		b, _ := k.GetBudget(ctx, s.BudgetId)
+		b, found := k.GetBudget(ctx, s.BudgetId)
+		if !found {
+			return fmt.Errorf("budget %s: %w", s.BudgetId, types.ErrRecordNotFound)
+		}
+		if b.AllocatedAmount.Amount.GTE(s.Amount.Amount) {
+			b.AllocatedAmount = b.AllocatedAmount.Sub(s.Amount)
+		} else {
+			// Should not happen given Approve always reserves first, but never let
+			// a subtraction panic or go negative on inconsistent legacy state.
+			b.AllocatedAmount = sdk.NewCoin(b.AllocatedAmount.Denom, sdk.ZeroInt())
+		}
 		b.SpentAmount = b.SpentAmount.Add(s.Amount)
 		b.UpdatedAt = now
 		k.SetBudget(ctx, b)
@@ -541,17 +587,28 @@ func (k Keeper) ActiveExecutedSpendTotals(ctx sdk.Context) sdk.Coins {
 	return totals
 }
 
-// ValidateSpendInvariant checks that no executed spend has FundsExecuted=false if LiveEnabled was active.
-// For metadata-only mode, FundsExecuted should always be false.
+// ValidateSpendInvariant checks budget accounting and FundsExecuted consistency
+// across all spend requests. Registered as a chain invariant (see module.go).
 func (k Keeper) ValidateSpendInvariant(ctx sdk.Context) error {
+	params := k.GetParams(ctx)
 	for _, s := range k.GetAllSpendRequests(ctx) {
-		if s.Status == int32(types.SpendExecuted) && !s.FundsExecuted {
-			// Metadata-mode execution is fine — only flag if LiveEnabled is true
-			// (we can't determine this from state alone at invariant time)
+		// A spend executed while live funds were enabled must be marked as such;
+		// metadata-only mode never sets FundsExecuted, so this only fires if a
+		// live execution path silently failed to record the transfer it made.
+		if s.Status == int32(types.SpendExecuted) && params.LiveEnabled && !s.FundsExecuted {
+			return fmt.Errorf("invariant violation: spend %s executed under live_enabled but FundsExecuted=false", s.SpendId)
 		}
 		// Terminal spends should not have FundsExecuted without being executed
 		if s.FundsExecuted && s.Status != int32(types.SpendExecuted) {
 			return fmt.Errorf("invariant violation: spend %s has FundsExecuted=true but status=%s", s.SpendId, types.SpendStatus(s.Status))
+		}
+	}
+	// Every budget's allocated+spent must stay within its ceiling — this is the
+	// property the Approve/Execute/Cancel reservation fixes above are supposed
+	// to maintain; catching a violation here means that accounting broke somewhere.
+	for _, b := range k.GetAllBudgets(ctx) {
+		if b.AllocatedAmount.Add(b.SpentAmount).Amount.GT(b.TotalAmount.Amount) {
+			return fmt.Errorf("invariant violation: budget %s allocated+spent (%s) exceeds total (%s)", b.BudgetId, b.AllocatedAmount.Add(b.SpentAmount), b.TotalAmount)
 		}
 	}
 	return nil
@@ -569,10 +626,26 @@ func (k Keeper) CancelSpendRequest(ctx sdk.Context, msg *types.MsgCancelSpendReq
 	if s.Status != int32(types.SpendRequested) && s.Status != int32(types.SpendApproved) {
 		return fmt.Errorf("status %s: %w", types.SpendStatus(s.Status), types.ErrInvalidTransition)
 	}
+	// An approved-but-not-yet-executed spend holds a budget reservation from
+	// ApproveSpendRequest — release it, or cancelled spends would permanently
+	// consume capacity they never actually used.
+	wasApproved := s.Status == int32(types.SpendApproved)
+	now := ctx.BlockTime().Unix()
 	s.Status = int32(types.SpendCancelled)
-	s.UpdatedAt = ctx.BlockTime().Unix()
+	s.UpdatedAt = now
 	if msg.Memo != "" {
 		s.Memo = strings.TrimSpace(msg.Memo)
+	}
+	if wasApproved && s.BudgetId != "" {
+		if b, found := k.GetBudget(ctx, s.BudgetId); found {
+			if b.AllocatedAmount.Amount.GTE(s.Amount.Amount) {
+				b.AllocatedAmount = b.AllocatedAmount.Sub(s.Amount)
+			} else {
+				b.AllocatedAmount = sdk.NewCoin(b.AllocatedAmount.Denom, sdk.ZeroInt())
+			}
+			b.UpdatedAt = now
+			k.SetBudget(ctx, b)
+		}
 	}
 	k.SetSpendRequest(ctx, s)
 	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventCancelSpend, sdk.NewAttribute(types.AttrSpendId, s.SpendId), sdk.NewAttribute(types.AttrStatus, fmt.Sprintf("%d", s.Status))))

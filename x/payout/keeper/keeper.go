@@ -208,6 +208,12 @@ func (k Keeper) CreatePayout(ctx sdk.Context, msg *types.MsgCreatePayout) error 
 		p.ApprovedAt = now
 	}
 
+	// Full structural validation (PayoutId format, amount/denom consistency,
+	// reference/memo length caps) as a final check before this enters state.
+	if err := p.ValidateWithParams(params); err != nil {
+		return err
+	}
+
 	if err := k.SetPayout(ctx, p); err != nil {
 		return err
 	}
@@ -256,13 +262,22 @@ func (k Keeper) CreateBatchPayout(ctx sdk.Context, msg *types.MsgCreateBatchPayo
 		if in.AssetDenom != "unxrl" {
 			return fmt.Errorf("denom %s: v1 only supports unxrl: %w", in.AssetDenom, types.ErrInvalidDenom)
 		}
-
 		p := types.NewPayout(in.PayoutId, msg.BatchId, msg.MerchantId, msg.Initiator, in.RecipientAddress, in.AssetDenom, in.Amount, in.PayoutType, in.PayoutReference, in.Memo, now)
 		if params.ApprovalRequired {
 			p.Status = int32(types.PayoutCreated)
 		} else {
 			p.Status = int32(types.PayoutApproved)
 			p.ApprovedAt = now
+		}
+
+		// Previously nothing validated individual batch entries — not the
+		// recipient bech32 address, not the minimum amount, not the PayoutId
+		// format, not the reference/memo length caps. A batch could silently
+		// create permanently-unpayable payout records to malformed addresses.
+		// This is the same per-entry validation CreatePayout already applies
+		// to a single payout.
+		if err := p.ValidateWithParams(params); err != nil {
+			return fmt.Errorf("entry %s: %w", in.PayoutId, err)
 		}
 
 		if err := k.SetPayout(ctx, p); err != nil {
@@ -298,16 +313,14 @@ func (k Keeper) ApprovePayout(ctx sdk.Context, msg *types.MsgApprovePayout) erro
 	if !found {
 		return fmt.Errorf("%s: %w", msg.PayoutId, types.ErrPayoutNotFound)
 	}
+	// The merchant-owner branch this used to have looked up a merchant by
+	// treating p.InitiatorAddress (the requester, not a merchant key) as the
+	// GetMerchant lookup address — GetMerchant is keyed by merchant owner
+	// address, and p.MerchantId is a free-text label with no resolution path
+	// to an address via the available keeper interface, so that branch could
+	// never match and always fell through to ErrUnauthorized anyway.
 	if msg.Signer != p.InitiatorAddress && msg.Signer != k.authority {
-		// Also check if signer is the merchant owner
-		owner, _ := sdk.AccAddressFromBech32(p.InitiatorAddress)
-		if m, ok := k.merchantKeeper.GetMerchant(ctx, owner); !ok || m.Owner != msg.Signer {
-			return types.ErrUnauthorized
-		}
-		// fallback: allow authority
-		if msg.Signer != k.authority {
-			return types.ErrUnauthorized
-		}
+		return types.ErrUnauthorized
 	}
 	if p.Status != int32(types.PayoutCreated) {
 		return fmt.Errorf("status %s: %w", types.PayoutStatus(p.Status), types.ErrInvalidTransition)
