@@ -782,6 +782,21 @@ func (app *NexaRailApp) registerUpgradeHandlers() {
 		// No state mutation — return current version map unchanged
 		return fromVM, nil
 	})
+
+	// v0.1.1-mainnet2-fundsafety: treasury/settlement/escrow/payout keeper logic
+	// fixes (commit 5a9b8d3). No stored-field or genesis schema changes — every
+	// module's ConsensusVersion is unchanged — so this is a pure coordinated
+	// cutover, not a state migration. It still MUST go through a governance
+	// upgrade height rather than an uncoordinated binary swap: the fix changes
+	// deterministic state-transition logic (fee/budget accounting, escrow
+	// cancel authorization), so validators running old vs new code would
+	// compute different app hashes for the same block and fork if they
+	// switched at different heights.
+	app.UpgradeKeeper.SetUpgradeHandler("v0.1.1-mainnet2-fundsafety", func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		app.Logger().Info("No-op upgrade handler executed", "plan", plan.Name, "height", plan.Height)
+		// No state mutation — return current version map unchanged
+		return fromVM, nil
+	})
 }
 
 func GetMaccPerms() map[string][]string {
