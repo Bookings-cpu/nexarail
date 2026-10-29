@@ -146,7 +146,7 @@ nexaraild version --long | grep -i version    # confirm after the swap
 
 If the log still shows `UPGRADE ... NEEDED` after you restart, your service is still launching the old binary.
 
-**arm64 hosts (Oracle Always Free, Graviton, Raspberry Pi):** the v0.1.1 release currently ships only `linux-amd64` and `darwin-arm64` builds. If you are on `linux-arm64`, ask in #general before you start syncing so you are not stopped at 990,000 with no upgrade binary.
+**arm64 hosts (Oracle Always Free, Graviton, Raspberry Pi):** use `nexaraild-linux-arm64` from the same v0.1.1 release and verify it against `SHA256SUMS.linux-arm64` (the arm64 build has its own checksum file).
 
 Optional: [Cosmovisor](https://docs.cosmos.network/main/build/tooling/cosmovisor) automates this swap. Put the genesis binary in `genesis/bin/` and v0.1.1 in `upgrades/v0.1.1-mainnet2-fundsafety/bin/`.
 
