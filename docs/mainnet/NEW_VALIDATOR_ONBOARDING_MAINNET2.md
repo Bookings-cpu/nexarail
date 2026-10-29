@@ -121,7 +121,34 @@ minimum-gas-prices = "0.001unxrl"
 nexaraild start
 ```
 
-Watch height climb. Chain is only minutes old at launch — you'll be caught up in seconds to minutes depending on when you join.
+Watch height climb. The chain is past height 1.6M, so a sync from genesis takes roughly 40+ hours. State sync and public snapshots are **not** available yet; a third-party snapshot has been shared in Discord, but it is unofficial and has not worked for everyone.
+
+### 5b. Mandatory binary swap at height 990,000 (everyone syncing from genesis)
+
+Governance proposal #3 upgraded the chain to `v0.1.1-mainnet2-fundsafety` at height **990000**. A node syncing from genesis must therefore run **two** binaries in sequence:
+
+1. Start with the genesis binary from step 1. It syncs up to 990,000, then **halts on its own** and logs:
+   `UPGRADE "v0.1.1-mainnet2-fundsafety" NEEDED at height: 990000`
+   This is expected — it is not a crash.
+2. Only after that halt, stop the service and replace the binary with the v0.1.1 build from
+   <https://github.com/Bookings-cpu/nexarail/releases/tag/v0.1.1-mainnet2-fundsafety>
+   (verify it against that release's `SHA256SUMS`), then start again. It continues from 990,000 to the tip.
+
+Do **not** install v0.1.1 before your node reaches 990,000 — the new binary panics on every block below the upgrade height ("crash-loop"). This is standard Cosmos upgrade behaviour.
+
+**Most common mistake: replacing the wrong file.** Check which path your service actually runs, and replace *that* file:
+
+```bash
+systemctl cat nexaraild | grep ExecStart      # e.g. /usr/local/bin/nexaraild
+which -a nexaraild                            # may list a second copy, e.g. ~/go/bin/nexaraild
+nexaraild version --long | grep -i version    # confirm after the swap
+```
+
+If the log still shows `UPGRADE ... NEEDED` after you restart, your service is still launching the old binary.
+
+**arm64 hosts (Oracle Always Free, Graviton, Raspberry Pi):** use `nexaraild-linux-arm64` from the same v0.1.1 release and verify it against `SHA256SUMS.linux-arm64` (the arm64 build has its own checksum file).
+
+Optional: [Cosmovisor](https://docs.cosmos.network/main/build/tooling/cosmovisor) automates this swap. Put the genesis binary in `genesis/bin/` and v0.1.1 in `upgrades/v0.1.1-mainnet2-fundsafety/bin/`.
 
 ### 6. Create your wallet + request faucet
 
