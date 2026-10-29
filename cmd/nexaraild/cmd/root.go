@@ -27,6 +27,8 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	govcli "github.com/cosmos/cosmos-sdk/x/gov/client/cli"
 	paramscli "github.com/cosmos/cosmos-sdk/x/params/client/cli"
+	slashingcli "github.com/cosmos/cosmos-sdk/x/slashing/client/cli"
+	stakingcli "github.com/cosmos/cosmos-sdk/x/staking/client/cli"
 
 	"github.com/nexarail/chain/app"
 	escrowcli "github.com/nexarail/chain/x/escrow/client/cli"
@@ -215,6 +217,8 @@ func queryCommand() *cobra.Command {
 		authcli.GetQueryCmd(),
 		bankcli.GetQueryCmd(),
 		govcli.GetQueryCmd(),
+		stakingcli.GetQueryCmd(),
+		slashingcli.GetQueryCmd(),
 		feescli.GetQueryCmd(),
 		merchantcli.GetQueryCmd(),
 		settlementcli.GetQueryCmd(),
@@ -238,6 +242,8 @@ func txCommand() *cobra.Command {
 	cmd.AddCommand(
 		bankcli.NewSendTxCmd(),
 		govcli.NewTxCmd(nil),
+		stakingcli.NewTxCmd(),
+		slashingcli.NewTxCmd(),
 		paramscli.NewSubmitParamChangeProposalTxCmd(),
 		feescli.GetTxCmd(),
 		merchantcli.GetTxCmd(),
